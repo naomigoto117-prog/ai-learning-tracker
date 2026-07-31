@@ -1,432 +1,678 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+import {
+  Route,
+  Routes,
+} from "react-router-dom";
+
+import Header from "./components/Header";
+import ConfirmModal from "./components/ConfirmModal";
+import GoalForm from "./components/GoalForm";
+
+import HomePage from "./pages/HomePage";
+import CoursesPage from "./pages/CoursesPage";
+import CourseFormPage from "./pages/CourseFormPage";
+import CourseDetailsPage from "./pages/CourseDetailsPage";
+import CertificationsPage from "./pages/CertificationsPage";
+import ProjectsPage from "./pages/ProjectsPage";
+import NotesPage from "./pages/NotesPage";
+import NoteReaderPage from "./pages/NoteReaderPage";
+import NotFoundPage from "./pages/NotFoundPage";
+
+import {
+  emptyGoalForm,
+  initialCertifications,
+  initialCourses,
+  initialGoals,
+  initialProjects,
+} from "./data/initialData";
+
 import "./App.css";
 
-const initialCourses = [
-  {
-    id: 1,
-    title: "Python for AI",
-    platform: "freeCodeCamp",
-    category: "Programming",
-    progress: 60,
-    status: "In Progress",
-    deadline: "2026-08-15",
-  },
-  {
-    id: 2,
-    title: "Introduction to Generative AI",
-    platform: "Google Cloud",
-    category: "Generative AI",
-    progress: 100,
-    status: "Completed",
-    deadline: "2026-07-20",
-  },
-];
+function readStorage(key, fallback) {
+  try {
+    const savedValue =
+      localStorage.getItem(key);
 
-const initialGoals = [
-  {
-    id: 1,
-    title: "Complete one AI course",
-    deadline: "2026-08-30",
-  },
-];
+    return savedValue
+      ? JSON.parse(savedValue)
+      : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 function App() {
-  const [courses, setCourses] = useState(() => {
-    const savedCourses = localStorage.getItem("ai-dashboard-courses");
-    return savedCourses ? JSON.parse(savedCourses) : initialCourses;
-  });
+  const [courses, setCourses] =
+    useState(() =>
+      readStorage(
+        "ai-dashboard-courses",
+        initialCourses
+      )
+    );
 
-  const [goals, setGoals] = useState(() => {
-    const savedGoals = localStorage.getItem("ai-dashboard-goals");
-    return savedGoals ? JSON.parse(savedGoals) : initialGoals;
-  });
+  const [goals, setGoals] =
+    useState(() =>
+      readStorage(
+        "ai-dashboard-goals",
+        initialGoals
+      )
+    );
 
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("ai-dashboard-theme") || "light";
-  });
+  const [
+    certifications,
+    setCertifications,
+  ] = useState(() =>
+    readStorage(
+      "ai-dashboard-certifications",
+      initialCertifications
+    )
+  );
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [projects, setProjects] =
+    useState(() =>
+      readStorage(
+        "ai-dashboard-projects",
+        initialProjects
+      )
+    );
 
-  const [courseForm, setCourseForm] = useState({
-    title: "",
-    platform: "",
-    category: "",
-    progress: 0,
-    status: "Not Started",
-    deadline: "",
-  });
+  const [theme, setTheme] =
+    useState(
+      () =>
+        localStorage.getItem(
+          "ai-dashboard-theme"
+        ) || "light"
+    );
 
-  const [goalForm, setGoalForm] = useState({
-    title: "",
-    deadline: "",
-  });
+  const [
+    deleteTarget,
+    setDeleteTarget,
+  ] = useState(null);
+
+  const [
+    goalEditorOpen,
+    setGoalEditorOpen,
+  ] = useState(false);
+
+  const [
+    editingGoal,
+    setEditingGoal,
+  ] = useState(null);
+
+  const [goalForm, setGoalForm] =
+    useState(emptyGoalForm);
+
+  const [
+    goalErrors,
+    setGoalErrors,
+  ] = useState({});
 
   useEffect(() => {
-    localStorage.setItem("ai-dashboard-courses", JSON.stringify(courses));
+    localStorage.setItem(
+      "ai-dashboard-courses",
+      JSON.stringify(courses)
+    );
   }, [courses]);
 
   useEffect(() => {
-    localStorage.setItem("ai-dashboard-goals", JSON.stringify(goals));
+    localStorage.setItem(
+      "ai-dashboard-goals",
+      JSON.stringify(goals)
+    );
   }, [goals]);
 
   useEffect(() => {
-    localStorage.setItem("ai-dashboard-theme", theme);
-    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem(
+      "ai-dashboard-certifications",
+      JSON.stringify(certifications)
+    );
+  }, [certifications]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "ai-dashboard-projects",
+      JSON.stringify(projects)
+    );
+  }, [projects]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "ai-dashboard-theme",
+      theme
+    );
+
+    document.documentElement.setAttribute(
+      "data-theme",
+      theme
+    );
   }, [theme]);
 
-  const filteredCourses = useMemo(() => {
-    return courses.filter((course) => {
-      const matchesSearch =
-        course.title.toLowerCase().includes(search.toLowerCase()) ||
-        course.platform.toLowerCase().includes(search.toLowerCase());
-
-      const matchesStatus =
-        statusFilter === "All" || course.status === statusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
-  }, [courses, search, statusFilter]);
-
-  const completedCourses = courses.filter(
-    (course) => course.status === "Completed"
-  ).length;
-
-  const inProgressCourses = courses.filter(
-    (course) => course.status === "In Progress"
-  ).length;
-
-  const averageProgress =
-    courses.length > 0
-      ? Math.round(
-          courses.reduce((total, course) => total + Number(course.progress), 0) /
-            courses.length
-        )
-      : 0;
-
-  function handleCourseChange(event) {
-    const { name, value } = event.target;
-
-    setCourseForm((current) => ({
+  function addCourse(course) {
+    setCourses((current) => [
+      course,
       ...current,
-      [name]: name === "progress" ? Number(value) : value,
-    }));
+    ]);
+  }
+
+  function updateCourse(updatedCourse) {
+    setCourses((current) =>
+      current.map((course) =>
+        course.id === updatedCourse.id
+          ? updatedCourse
+          : course
+      )
+    );
+  }
+
+  function toggleFavorite(course) {
+    updateCourse({
+      ...course,
+      favorite: !course.favorite,
+    });
+  }
+
+  function toggleGoal(id) {
+    setGoals((current) =>
+      current.map((goal) =>
+        goal.id === id
+          ? {
+              ...goal,
+              completed:
+                !goal.completed,
+            }
+          : goal
+      )
+    );
+  }
+
+  function openGoalEditor(goal) {
+    setEditingGoal(goal);
+
+    setGoalForm(
+      goal
+        ? {
+            title: goal.title,
+            deadline: goal.deadline,
+          }
+        : {
+            ...emptyGoalForm,
+          }
+    );
+
+    setGoalErrors({});
+    setGoalEditorOpen(true);
+  }
+
+  function closeGoalEditor() {
+    setGoalEditorOpen(false);
+    setEditingGoal(null);
+    setGoalForm({
+      ...emptyGoalForm,
+    });
+    setGoalErrors({});
   }
 
   function handleGoalChange(event) {
-    const { name, value } = event.target;
+    const { name, value } =
+      event.target;
 
     setGoalForm((current) => ({
       ...current,
       [name]: value,
     }));
+
+    setGoalErrors((current) => ({
+      ...current,
+      [name]: "",
+    }));
   }
 
-  function addCourse(event) {
+  function saveGoal(event) {
     event.preventDefault();
+
+    const nextErrors = {};
+
+    if (!goalForm.title.trim()) {
+      nextErrors.title =
+        "Goal title is required.";
+    }
+
+    if (!goalForm.deadline) {
+      nextErrors.deadline =
+        "Deadline is required.";
+    }
 
     if (
-      !courseForm.title.trim() ||
-      !courseForm.platform.trim() ||
-      !courseForm.category.trim() ||
-      !courseForm.deadline
+      Object.keys(nextErrors).length >
+      0
     ) {
-      alert("Please complete all course fields.");
+      setGoalErrors(nextErrors);
       return;
     }
 
-    const newCourse = {
-      ...courseForm,
-      id: Date.now(),
-    };
+    if (editingGoal) {
+      setGoals((current) =>
+        current.map((goal) =>
+          goal.id === editingGoal.id
+            ? {
+                ...goal,
+                ...goalForm,
+              }
+            : goal
+        )
+      );
+    } else {
+      setGoals((current) => [
+        {
+          ...goalForm,
+          id: crypto.randomUUID(),
+          completed: false,
+        },
+        ...current,
+      ]);
+    }
 
-    setCourses((current) => [newCourse, ...current]);
+    closeGoalEditor();
+  }
 
-    setCourseForm({
-      title: "",
-      platform: "",
-      category: "",
-      progress: 0,
-      status: "Not Started",
-      deadline: "",
+  function saveCertification(
+    certification
+  ) {
+    setCertifications((current) => {
+      const exists = current.some(
+        (item) =>
+          item.id ===
+          certification.id
+      );
+
+      if (exists) {
+        return current.map((item) =>
+          item.id ===
+          certification.id
+            ? certification
+            : item
+        );
+      }
+
+      return [
+        certification,
+        ...current,
+      ];
     });
   }
 
-  function addGoal(event) {
-    event.preventDefault();
+  function saveProject(project) {
+    setProjects((current) => {
+      const exists = current.some(
+        (item) =>
+          item.id === project.id
+      );
 
-    if (!goalForm.title.trim() || !goalForm.deadline) {
-      alert("Please complete all goal fields.");
+      if (exists) {
+        return current.map((item) =>
+          item.id === project.id
+            ? project
+            : item
+        );
+      }
+
+      return [project, ...current];
+    });
+  }
+
+  const closeDeleteModal =
+    useCallback(() => {
+      setDeleteTarget(null);
+    }, []);
+
+  function confirmDelete() {
+    if (!deleteTarget) {
       return;
     }
 
-    const newGoal = {
-      ...goalForm,
-      id: Date.now(),
-    };
+    if (
+      deleteTarget.type === "course"
+    ) {
+      setCourses((current) =>
+        current.filter(
+          (course) =>
+            course.id !==
+            deleteTarget.item.id
+        )
+      );
+    }
 
-    setGoals((current) => [newGoal, ...current]);
+    if (
+      deleteTarget.type === "goal"
+    ) {
+      setGoals((current) =>
+        current.filter(
+          (goal) =>
+            goal.id !==
+            deleteTarget.item.id
+        )
+      );
+    }
 
-    setGoalForm({
-      title: "",
-      deadline: "",
-    });
-  }
+    if (
+      deleteTarget.type ===
+      "certification"
+    ) {
+      setCertifications((current) =>
+        current.filter(
+          (certification) =>
+            certification.id !==
+            deleteTarget.item.id
+        )
+      );
+    }
 
-  function deleteCourse(id) {
-    setCourses((current) => current.filter((course) => course.id !== id));
-  }
+    if (
+      deleteTarget.type === "project"
+    ) {
+      setProjects((current) =>
+        current.filter(
+          (project) =>
+            project.id !==
+            deleteTarget.item.id
+        )
+      );
+    }
 
-  function deleteGoal(id) {
-    setGoals((current) => current.filter((goal) => goal.id !== id));
+    closeDeleteModal();
   }
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Personal Learning Hub</p>
-          <h1>AI Learning Dashboard</h1>
-        </div>
+    <div className="app-shell">
+      <Header
+        theme={theme}
+        onToggleTheme={() =>
+          setTheme((current) =>
+            current === "light"
+              ? "dark"
+              : "light"
+          )
+        }
+      />
 
-        <button
-          className="theme-button"
-          type="button"
-          onClick={() =>
-            setTheme((current) => (current === "light" ? "dark" : "light"))
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <HomePage
+              courses={courses}
+              goals={goals}
+              certifications={
+                certifications
+              }
+              onToggleGoal={toggleGoal}
+              onEditGoal={
+                openGoalEditor
+              }
+              onRequestDeleteGoal={(
+                goal
+              ) =>
+                setDeleteTarget({
+                  type: "goal",
+                  item: goal,
+                })
+              }
+              onRequestDeleteCourse={(
+                course
+              ) =>
+                setDeleteTarget({
+                  type: "course",
+                  item: course,
+                })
+              }
+              onToggleFavorite={
+                toggleFavorite
+              }
+            />
           }
+        />
+
+        <Route
+          path="/courses"
+          element={
+            <CoursesPage
+              courses={courses}
+              onRequestDeleteCourse={(
+                course
+              ) =>
+                setDeleteTarget({
+                  type: "course",
+                  item: course,
+                })
+              }
+              onToggleFavorite={
+                toggleFavorite
+              }
+              initialFilter="All"
+              pageTitle="All Courses"
+            />
+          }
+        />
+
+        <Route
+          path="/courses/in-progress"
+          element={
+            <CoursesPage
+              courses={courses}
+              onRequestDeleteCourse={(
+                course
+              ) =>
+                setDeleteTarget({
+                  type: "course",
+                  item: course,
+                })
+              }
+              onToggleFavorite={
+                toggleFavorite
+              }
+              initialFilter="In Progress"
+              pageTitle="Courses In Progress"
+            />
+          }
+        />
+
+        <Route
+          path="/courses/completed"
+          element={
+            <CoursesPage
+              courses={courses}
+              onRequestDeleteCourse={(
+                course
+              ) =>
+                setDeleteTarget({
+                  type: "course",
+                  item: course,
+                })
+              }
+              onToggleFavorite={
+                toggleFavorite
+              }
+              initialFilter="Completed"
+              pageTitle="Completed Courses"
+            />
+          }
+        />
+
+        <Route
+          path="/courses/add"
+          element={
+            <CourseFormPage
+              courses={courses}
+              onAddCourse={addCourse}
+              onUpdateCourse={
+                updateCourse
+              }
+            />
+          }
+        />
+
+        <Route
+          path="/courses/:courseId"
+          element={
+            <CourseDetailsPage
+              courses={courses}
+              onUpdateCourse={
+                updateCourse
+              }
+            />
+          }
+        />
+
+        <Route
+          path="/courses/:courseId/edit"
+          element={
+            <CourseFormPage
+              courses={courses}
+              onAddCourse={addCourse}
+              onUpdateCourse={
+                updateCourse
+              }
+            />
+          }
+        />
+
+        <Route
+          path="/certifications"
+          element={
+            <CertificationsPage
+              certifications={
+                certifications
+              }
+              onSaveCertification={
+                saveCertification
+              }
+              onRequestDeleteCertification={(
+                certification
+              ) =>
+                setDeleteTarget({
+                  type: "certification",
+                  item: certification,
+                })
+              }
+            />
+          }
+        />
+
+        <Route
+          path="/projects"
+          element={
+            <ProjectsPage
+              projects={projects}
+              onSaveProject={
+                saveProject
+              }
+              onRequestDeleteProject={(
+                project
+              ) =>
+                setDeleteTarget({
+                  type: "project",
+                  item: project,
+                })
+              }
+            />
+          }
+        />
+
+        <Route
+          path="/notes"
+          element={
+            <NotesPage
+              courses={courses}
+            />
+          }
+        />
+
+        <Route
+          path="/notes/:courseId/:noteId"
+          element={
+            <NoteReaderPage
+              courses={courses}
+            />
+          }
+        />
+
+        <Route
+          path="*"
+          element={<NotFoundPage />}
+        />
+      </Routes>
+
+      {goalEditorOpen && (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              closeGoalEditor();
+            }
+          }}
         >
-          {theme === "light" ? "Dark Mode" : "Light Mode"}
-        </button>
-      </header>
+          <section
+            className="editor-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="goal-editor-title"
+          >
+            <p className="section-label">
+              Learning goal
+            </p>
 
-      <main>
-        <section className="stats-grid" aria-label="Learning statistics">
-          <article className="stat-card">
-            <span>Total Courses</span>
-            <strong>{courses.length}</strong>
-          </article>
+            <h2 id="goal-editor-title">
+              {editingGoal
+                ? "Edit Goal"
+                : "Add Goal"}
+            </h2>
 
-          <article className="stat-card">
-            <span>In Progress</span>
-            <strong>{inProgressCourses}</strong>
-          </article>
+            <GoalForm
+              form={goalForm}
+              errors={goalErrors}
+              onChange={
+                handleGoalChange
+              }
+              onSubmit={saveGoal}
+              onCancel={
+                closeGoalEditor
+              }
+              submitLabel={
+                editingGoal
+                  ? "Save Changes"
+                  : "Add Goal"
+              }
+            />
+          </section>
+        </div>
+      )}
 
-          <article className="stat-card">
-            <span>Completed</span>
-            <strong>{completedCourses}</strong>
-          </article>
-
-          <article className="stat-card">
-            <span>Average Progress</span>
-            <strong>{averageProgress}%</strong>
-          </article>
-        </section>
-
-        <section className="content-grid">
-          <div className="panel">
-            <h2>Add Course</h2>
-
-            <form onSubmit={addCourse} className="form-grid">
-              <label>
-                Course title
-                <input
-                  name="title"
-                  value={courseForm.title}
-                  onChange={handleCourseChange}
-                  placeholder="Example: Machine Learning Basics"
-                />
-              </label>
-
-              <label>
-                Platform
-                <input
-                  name="platform"
-                  value={courseForm.platform}
-                  onChange={handleCourseChange}
-                  placeholder="Example: Coursera"
-                />
-              </label>
-
-              <label>
-                Category
-                <input
-                  name="category"
-                  value={courseForm.category}
-                  onChange={handleCourseChange}
-                  placeholder="Example: Machine Learning"
-                />
-              </label>
-
-              <label>
-                Progress
-                <input
-                  type="number"
-                  name="progress"
-                  min="0"
-                  max="100"
-                  value={courseForm.progress}
-                  onChange={handleCourseChange}
-                />
-              </label>
-
-              <label>
-                Status
-                <select
-                  name="status"
-                  value={courseForm.status}
-                  onChange={handleCourseChange}
-                >
-                  <option>Not Started</option>
-                  <option>In Progress</option>
-                  <option>Completed</option>
-                </select>
-              </label>
-
-              <label>
-                Target completion date
-                <input
-                  type="date"
-                  name="deadline"
-                  value={courseForm.deadline}
-                  onChange={handleCourseChange}
-                />
-              </label>
-
-              <button className="primary-button" type="submit">
-                Add Course
-              </button>
-            </form>
-          </div>
-
-          <div className="panel">
-            <h2>Add Learning Goal</h2>
-
-            <form onSubmit={addGoal} className="form-grid">
-              <label>
-                Goal title
-                <input
-                  name="title"
-                  value={goalForm.title}
-                  onChange={handleGoalChange}
-                  placeholder="Example: Study five hours this week"
-                />
-              </label>
-
-              <label>
-                Deadline
-                <input
-                  type="date"
-                  name="deadline"
-                  value={goalForm.deadline}
-                  onChange={handleGoalChange}
-                />
-              </label>
-
-              <button className="primary-button" type="submit">
-                Add Goal
-              </button>
-            </form>
-
-            <div className="goal-list">
-              {goals.length === 0 ? (
-                <p className="empty-state">No learning goals yet.</p>
-              ) : (
-                goals.map((goal) => (
-                  <article className="goal-card" key={goal.id}>
-                    <div>
-                      <h3>{goal.title}</h3>
-                      <p>Deadline: {goal.deadline}</p>
-                    </div>
-
-                    <button
-                      className="danger-button"
-                      type="button"
-                      onClick={() => deleteGoal(goal.id)}
-                    >
-                      Delete
-                    </button>
-                  </article>
-                ))
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section className="panel course-section">
-          <div className="section-header">
-            <div>
-              <h2>My Courses</h2>
-              <p>Track and review your active AI learning courses.</p>
-            </div>
-
-            <div className="filters">
-              <input
-                type="search"
-                placeholder="Search courses"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                aria-label="Search courses"
-              />
-
-              <select
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-                aria-label="Filter courses by status"
-              >
-                <option>All</option>
-                <option>Not Started</option>
-                <option>In Progress</option>
-                <option>Completed</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="course-grid">
-            {filteredCourses.length === 0 ? (
-              <p className="empty-state">No courses match your search.</p>
-            ) : (
-              filteredCourses.map((course) => (
-                <article className="course-card" key={course.id}>
-                  <div className="course-card-header">
-                    <div>
-                      <span className="category">{course.category}</span>
-                      <h3>{course.title}</h3>
-                      <p>{course.platform}</p>
-                    </div>
-
-                    <span className="status">{course.status}</span>
-                  </div>
-
-                  <div className="progress-row">
-                    <span>Progress</span>
-                    <strong>{course.progress}%</strong>
-                  </div>
-
-                  <div className="progress-track">
-                    <div
-                      className="progress-fill"
-                      style={{ width: `${course.progress}%` }}
-                    />
-                  </div>
-
-                  <p className="deadline">
-                    Target date: {course.deadline}
-                  </p>
-
-                  <button
-                    className="danger-button"
-                    type="button"
-                    onClick={() => deleteCourse(course.id)}
-                  >
-                    Delete Course
-                  </button>
-                </article>
-              ))
-            )}
-          </div>
-        </section>
-      </main>
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        title={`Delete ${
+          deleteTarget?.type ||
+          "item"
+        }?`}
+        message={
+          deleteTarget
+            ? `This will permanently remove "${
+                deleteTarget.item
+                  .title ||
+                deleteTarget.item.name
+              }".`
+            : ""
+        }
+        onConfirm={confirmDelete}
+        onCancel={closeDeleteModal}
+      />
     </div>
   );
 }

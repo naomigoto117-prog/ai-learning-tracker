@@ -44,3 +44,50 @@ A React application for tracking AI courses, learning goals, course progress, an
 ```bash
 npm install
 npm run dev
+
+# AI Learning Dashboard Upgrade
+
+This bundle adds:
+
+- Editable courses
+- Automatic status syncing from progress
+- Functional certifications with add/edit/delete
+- Add/edit/complete/delete goals
+- Delete confirmation modal
+- Clickable dashboard summary cards
+- Improved empty states
+- Mobile hamburger navigation
+- Status-specific colors
+- 404 page
+- localStorage persistence for all data
+
+## Install dependency
+
+Run:
+
+```powershell
+npm install react-router-dom
+```
+
+## Apply the upgrade
+
+Copy the contents of this bundle's `src` folder into your project's existing `src` folder and allow matching files to be replaced.
+
+Then run:
+
+```powershell
+npm run lint
+npm run dev
+```
+
+## Routes
+
+- `/`
+- `/courses`
+- `/courses/in-progress`
+- `/courses/completed`
+- `/courses/add`
+- `/courses/:courseId/edit`
+- `/certifications`
+
+Any unknown route displays the custom 404 page.
