@@ -1,4 +1,4 @@
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-3-flash-preview";
 
 const ALLOWED_PACES = [
   "Relaxed",
@@ -519,4 +519,4 @@ export function GET() {
     message:
       "The Gemini study-plan API is available. Send a POST request to generate a plan.",
   });
-}
+}gi
