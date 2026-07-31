@@ -4068,3 +4068,113 @@ select[aria-invalid="true"] {
     width: 100%;
   }
 }
+
+/* ==========================================
+   Projects and Certifications
+   Match Notes Library sizing
+========================================== */
+
+/* Flat page action buttons */
+.page-heading > .primary-button {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: max-content;
+  white-space: nowrap;
+  background: var(--primary);
+  box-shadow: none;
+  transform: none;
+}
+
+.page-heading > .primary-button:hover {
+  background: var(--primary-hover);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Match the Notes Library's full-width, single-column card layout */
+.projects-grid,
+.certifications-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 17px;
+  width: 100%;
+  margin-top: 0;
+  align-items: start;
+}
+
+/* Project cards use the same full-width behavior as notes cards */
+.project-card {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+}
+
+/* Certification cards use the same full-width behavior as notes cards */
+.certification-card,
+.certification-card-clean,
+.certification-card-with-preview,
+.certification-card-with-file {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+}
+
+/* Keep card actions aligned naturally */
+.project-link-actions {
+  margin-top: auto;
+}
+
+/* Empty states match the Notes Library panel width */
+.projects-grid > .full-width-empty,
+.certifications-grid > .full-width-empty {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: none;
+  min-height: 240px;
+  justify-self: stretch;
+  padding: 40px 25px;
+}
+
+/* Flat empty-state buttons */
+.projects-grid > .full-width-empty .primary-button,
+.certifications-grid > .full-width-empty .primary-button {
+  display: inline-flex;
+  width: auto;
+  min-width: max-content;
+  margin-inline: auto;
+  white-space: nowrap;
+  background: var(--primary);
+  box-shadow: none;
+  transform: none;
+}
+
+.projects-grid > .full-width-empty .primary-button:hover,
+.certifications-grid > .full-width-empty .primary-button:hover {
+  background: var(--primary-hover);
+  box-shadow: none;
+  transform: none;
+}
+
+/* Responsive layout */
+@media (max-width: 650px) {
+  .page-heading > .primary-button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .projects-grid,
+  .certifications-grid {
+    gap: 16px;
+  }
+
+  .projects-grid > .full-width-empty,
+  .certifications-grid > .full-width-empty {
+    min-height: 0;
+    padding: 32px 20px;
+  }
+
+  .projects-grid > .full-width-empty .primary-button,
+  .certifications-grid > .full-width-empty .primary-button {
+    width: auto;
+  }
+}
