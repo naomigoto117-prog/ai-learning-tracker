@@ -18,6 +18,7 @@ import CourseFormPage from "./pages/CourseFormPage";
 import CourseDetailsPage from "./pages/CourseDetailsPage";
 import CertificationsPage from "./pages/CertificationsPage";
 import ProjectsPage from "./pages/ProjectsPage";
+import AIPlannerPage from "./pages/AIPlannerPage";
 import NotesPage from "./pages/NotesPage";
 import NoteReaderPage from "./pages/NoteReaderPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -558,6 +559,16 @@ function App() {
                   item: certification,
                 })
               }
+            />
+          }
+        />
+
+        <Route
+          path="/ai-planner"
+          element={
+            <AIPlannerPage
+              courses={courses}
+              goals={goals}
             />
           }
         />

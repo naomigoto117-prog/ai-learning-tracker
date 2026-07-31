@@ -134,8 +134,21 @@ export default function Header({ theme, onToggleTheme }) {
       ? "nav-link nav-link-active"
       : "nav-link"
   }
+  onClick={closeNavigation}
 >
   Notes
+</NavLink>
+
+<NavLink
+  to="/ai-planner"
+  className={({ isActive }) =>
+    isActive
+      ? "nav-link nav-link-active"
+      : "nav-link"
+  }
+  onClick={closeNavigation}
+>
+  AI Planner
 </NavLink>
 
 <NavLink
@@ -145,6 +158,7 @@ export default function Header({ theme, onToggleTheme }) {
       ? "nav-link nav-link-active"
       : "nav-link"
   }
+  onClick={closeNavigation}
 >
   Projects
 </NavLink>
