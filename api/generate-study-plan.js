@@ -155,14 +155,71 @@ function extractGeminiText(data) {
 
 function cleanJsonResponse(text) {
   return String(text || "")
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "")
+    .replace(/^\uFEFF/, "")
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
     .trim();
 }
 
+function extractJsonObject(text) {
+  const cleanedText = cleanJsonResponse(text);
+
+  const firstBrace = cleanedText.indexOf("{");
+  const lastBrace = cleanedText.lastIndexOf("}");
+
+  if (
+    firstBrace === -1 ||
+    lastBrace === -1 ||
+    lastBrace <= firstBrace
+  ) {
+    throw new Error(
+      "No valid JSON object was found in the Gemini response."
+    );
+  }
+
+  return cleanedText.slice(
+    firstBrace,
+    lastBrace + 1
+  );
+}
+
+function repairJsonText(text) {
+  return text
+    // Remove trailing commas before } or ]
+    .replace(/,\s*([}\]])/g, "$1")
+
+    // Remove unsupported control characters
+    .replace(
+      /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,
+      ""
+    );
+}
+
 function parseGeneratedJson(text) {
-  return JSON.parse(cleanJsonResponse(text));
+  const extractedJson = extractJsonObject(text);
+
+  try {
+    return JSON.parse(extractedJson);
+  } catch (firstError) {
+    const repairedJson =
+      repairJsonText(extractedJson);
+
+    try {
+      return JSON.parse(repairedJson);
+    } catch (secondError) {
+      console.error(
+        "Gemini JSON parsing failed:",
+        {
+          firstError,
+          secondError,
+          extractedJson,
+          repairedJson,
+        }
+      );
+
+      throw secondError;
+    }
+  }
 }
 
 function urlsMatch(firstUrl, secondUrl) {
@@ -386,6 +443,11 @@ PLANNING RULES
 10. Give 3 to 5 concise recommendations.
 11. Return valid JSON only.
 12. Do not return Markdown or code fences.
+13. Every property name and string value must use double quotes.
+14. Do not include trailing commas.
+15. Do not include comments.
+16. Do not include text before or after the JSON object.
+17. Ensure every array and object is completely closed.
 
 RETURN EXACTLY THIS JSON STRUCTURE
 
@@ -571,6 +633,7 @@ export default async function handler(
         generationConfig: {
           responseMimeType: "application/json",
           maxOutputTokens: 8192,
+          temperature: 0.1,
         },
       };
 
