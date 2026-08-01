@@ -1150,3 +1150,223 @@
     min-width: 120px;
   }
 }
+
+/* ==========================
+   Requested Fix: AI Planner dark mode
+   Matches the application's existing dark theme variables.
+   ========================== */
+
+[data-theme="dark"] .ai-planner-page {
+  color: var(--text-color, #fff1ed);
+}
+
+[data-theme="dark"] .ai-planner-page .planner-hero,
+[data-theme="dark"] .ai-planner-page .planner-form-card,
+[data-theme="dark"] .ai-planner-page .study-plan-panel,
+[data-theme="dark"] .ai-planner-page .saved-plans-toolbar,
+[data-theme="dark"] .ai-planner-page .saved-plans-panel,
+[data-theme="dark"] .ai-planner-page .study-session-card {
+  border-color: rgba(255, 133, 140, 0.16);
+  background: var(--card-background, #201719);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+}
+
+[data-theme="dark"] .ai-planner-page .planner-hero {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(239, 102, 113, 0.13),
+      transparent 36%
+    ),
+    var(--card-background, #201719);
+}
+
+[data-theme="dark"] .ai-planner-page .planner-eyebrow,
+[data-theme="dark"] .ai-planner-page .planner-model-badge,
+[data-theme="dark"] .ai-planner-page .ai-generated-badge,
+[data-theme="dark"] .ai-planner-page .text-button,
+[data-theme="dark"] .ai-planner-page .flat-button,
+[data-theme="dark"] .ai-planner-page .lesson-source-link,
+[data-theme="dark"] .ai-planner-page .source-course-item a,
+[data-theme="dark"] .ai-planner-page .clear-plan-button,
+[data-theme="dark"] .ai-planner-page .session-day,
+[data-theme="dark"] .ai-planner-page .session-duration {
+  color: var(--primary-color, #ef6671);
+}
+
+[data-theme="dark"] .ai-planner-page .planner-hero h1,
+[data-theme="dark"] .ai-planner-page .planner-section-heading h2,
+[data-theme="dark"] .ai-planner-page .focus-course-content strong,
+[data-theme="dark"] .ai-planner-page .planner-empty-state h3,
+[data-theme="dark"] .ai-planner-page .planner-placeholder h2,
+[data-theme="dark"] .ai-planner-page .generated-plan-header h2,
+[data-theme="dark"] .ai-planner-page .plan-source-summary h3,
+[data-theme="dark"] .ai-planner-page .recommendations-card h3,
+[data-theme="dark"] .ai-planner-page .session-top-row h3,
+[data-theme="dark"] .ai-planner-page .session-extra-box strong,
+[data-theme="dark"] .ai-planner-page .saved-plans-toolbar h2,
+[data-theme="dark"] .ai-planner-page .saved-plan-card h3,
+[data-theme="dark"] .ai-planner-page .saved-plans-empty h3,
+[data-theme="dark"] .ai-planner-page .plan-progress-summary,
+[data-theme="dark"] .ai-planner-page .planner-field > span {
+  color: var(--heading-color, #ff858c);
+}
+
+[data-theme="dark"] .ai-planner-page .planner-hero p,
+[data-theme="dark"] .ai-planner-page .planner-section-heading p,
+[data-theme="dark"] .ai-planner-page .focus-course-meta,
+[data-theme="dark"] .ai-planner-page .planner-field-help,
+[data-theme="dark"] .ai-planner-page .planner-placeholder,
+[data-theme="dark"] .ai-planner-page .generated-plan-header p,
+[data-theme="dark"] .ai-planner-page .source-course-item small,
+[data-theme="dark"] .ai-planner-page .session-course,
+[data-theme="dark"] .ai-planner-page .session-module,
+[data-theme="dark"] .ai-planner-page .session-activities,
+[data-theme="dark"] .ai-planner-page .saved-plans-toolbar p,
+[data-theme="dark"] .ai-planner-page .saved-plan-card p,
+[data-theme="dark"] .ai-planner-page .saved-plan-card span,
+[data-theme="dark"] .ai-planner-page .saved-plans-empty p,
+[data-theme="dark"] .ai-planner-page .generation-progress {
+  color: var(--muted-text, #c7aeb1);
+}
+
+[data-theme="dark"] .ai-planner-page .focus-course-card,
+[data-theme="dark"] .ai-planner-page .planner-summary span,
+[data-theme="dark"] .ai-planner-page .plan-source-summary,
+[data-theme="dark"] .ai-planner-page .recommendations-card,
+[data-theme="dark"] .ai-planner-page .session-extra-box,
+[data-theme="dark"] .ai-planner-page .saved-plan-card,
+[data-theme="dark"] .ai-planner-page .plan-progress-summary {
+  border-color: rgba(255, 133, 140, 0.14);
+  background: var(--soft-background, #2a1d20);
+}
+
+[data-theme="dark"] .ai-planner-page .focus-course-card:hover,
+[data-theme="dark"] .ai-planner-page .focus-course-card.selected {
+  border-color: rgba(239, 102, 113, 0.58);
+}
+
+[data-theme="dark"] .ai-planner-page .focus-course-card.selected {
+  box-shadow: 0 8px 24px rgba(239, 102, 113, 0.13);
+}
+
+[data-theme="dark"] .ai-planner-page .planner-field input,
+[data-theme="dark"] .ai-planner-page .planner-field select {
+  border-color: rgba(255, 133, 140, 0.2);
+  background: var(--input-background, #24191c);
+  color: var(--text-color, #fff1ed);
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .ai-planner-page .planner-field input:focus,
+[data-theme="dark"] .ai-planner-page .planner-field select:focus {
+  border-color: var(--primary-color, #ef6671);
+  box-shadow: 0 0 0 3px rgba(239, 102, 113, 0.14);
+}
+
+[data-theme="dark"] .ai-planner-page .planner-divider,
+[data-theme="dark"] .ai-planner-page .session-expanded-content,
+[data-theme="dark"] .ai-planner-page .source-course-item {
+  border-color: rgba(255, 133, 140, 0.12);
+}
+
+[data-theme="dark"] .ai-planner-page .flat-button,
+[data-theme="dark"] .ai-planner-page .clear-plan-button,
+[data-theme="dark"] .ai-planner-page .saved-plan-delete,
+[data-theme="dark"] .ai-planner-page .generated-plan-actions .clear-plan-button {
+  border-color: rgba(255, 133, 140, 0.28);
+  background: var(--card-background, #201719);
+}
+
+[data-theme="dark"] .ai-planner-page .flat-button:hover,
+[data-theme="dark"] .ai-planner-page .clear-plan-button:hover,
+[data-theme="dark"] .ai-planner-page .generated-plan-actions .clear-plan-button:hover {
+  border-color: var(--primary-color, #ef6671);
+  background: rgba(239, 102, 113, 0.12);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .ai-planner-page .generate-plan-button,
+[data-theme="dark"] .ai-planner-page .save-plan-button,
+[data-theme="dark"] .ai-planner-page .saved-plans-toggle,
+[data-theme="dark"] .ai-planner-page .saved-plan-open,
+[data-theme="dark"] .ai-planner-page .generated-plan-actions .save-plan-button {
+  background: var(--primary-color, #ef6671);
+  color: #ffffff;
+}
+
+[data-theme="dark"] .ai-planner-page .generate-plan-button:hover:not(:disabled),
+[data-theme="dark"] .ai-planner-page .save-plan-button:hover,
+[data-theme="dark"] .ai-planner-page .saved-plans-toggle:hover,
+[data-theme="dark"] .ai-planner-page .saved-plan-open:hover {
+  background: var(--heading-color, #ff858c);
+}
+
+[data-theme="dark"] .ai-planner-page .planner-model-badge,
+[data-theme="dark"] .ai-planner-page .ai-generated-badge,
+[data-theme="dark"] .ai-planner-page .session-number,
+[data-theme="dark"] .ai-planner-page .session-duration {
+  background: rgba(239, 102, 113, 0.14);
+}
+
+[data-theme="dark"] .ai-planner-page .source-status.available {
+  background: rgba(86, 192, 135, 0.14);
+  color: #7bd5a5;
+}
+
+[data-theme="dark"] .ai-planner-page .source-status.missing {
+  background: rgba(229, 160, 91, 0.14);
+  color: #efb16e;
+}
+
+[data-theme="dark"] .ai-planner-page .error-message {
+  border-color: rgba(255, 102, 122, 0.28);
+  background: rgba(190, 44, 61, 0.15);
+  color: #ff9aa8;
+}
+
+[data-theme="dark"] .ai-planner-page .success-message {
+  border-color: rgba(86, 192, 135, 0.27);
+  background: rgba(43, 142, 92, 0.14);
+  color: #86d8ac;
+}
+
+[data-theme="dark"] .ai-planner-page .planner-empty-state {
+  border-color: rgba(255, 133, 140, 0.28);
+}
+
+[data-theme="dark"] .ai-planner-page .study-session-card.completed {
+  border-color: rgba(86, 192, 135, 0.3);
+  background: rgba(43, 142, 92, 0.09);
+}
+
+[data-theme="dark"] .ai-planner-page .session-complete-button {
+  border-color: rgba(255, 133, 140, 0.38);
+}
+
+[data-theme="dark"] .ai-planner-page .session-complete-button.completed {
+  border-color: #56c087;
+  background: #388e63;
+}
+
+[data-theme="dark"] .ai-planner-page .plan-progress-track {
+  background: rgba(239, 102, 113, 0.15);
+}
+
+[data-theme="dark"] .ai-planner-page .plan-progress-track span {
+  background: var(--primary-color, #ef6671);
+}
+
+[data-theme="dark"] .ai-planner-page .saved-plan-delete {
+  color: #ff9aa8;
+}
+
+[data-theme="dark"] .ai-planner-page .saved-plan-delete:hover {
+  background: rgba(190, 44, 61, 0.16);
+}
+
+[data-theme="dark"] .ai-planner-page .session-task,
+[data-theme="dark"] .ai-planner-page .session-extra-box p,
+[data-theme="dark"] .ai-planner-page .recommendations-card ul {
+  color: var(--text-color, #fff1ed);
+}
