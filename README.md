@@ -1,93 +1,254 @@
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-
 # AI Learning Dashboard
 
-A React application for tracking AI courses, learning goals, course progress, and study activity.
+A modern React application for organizing AI learning in one place. Track courses, manage goals, save notes, document projects and certifications, and generate personalized AI-powered study plans using the Gemini API.
+
+## Overview
+
+The AI Learning Dashboard is designed to help learners organize their learning journey through an intuitive and responsive interface. It combines course management, productivity tools, and AI-generated study planning into a single application.
 
 ## Features
 
-- Add and delete courses
-- Track course progress
-- Search and filter courses
-- Add and delete learning goals
-- Dark and light theme
-- localStorage persistence
+### Dashboard
+
+- Learning progress overview
+- Quick statistics
+- Clickable summary cards
+- Responsive layout
+- Dark and light themes
+
+### Course Management
+
+- Add, edit, and delete courses
+- Automatic status calculation
+- Progress tracking
+- Course categories
+- Course deadlines
+- Search courses
+- Status filtering
+- Favorite courses
+- Course notes
+- Course source links
+
+### Learning Goals
+
+- Add, edit, complete, and delete goals
+- Progress tracking
+- Deadline management
+
+### Notes
+
+- Create and manage learning notes
+- Associate notes with courses
+- Rich note organization
+
+### Projects
+
+- Portfolio project tracking
+- Project descriptions
+- Technology stack
+- Repository links
+- Live demo links
+
+### Certifications
+
+- Add, edit, and delete certifications
+- Credential information
+- Issuer tracking
+- Issue dates
+
+### AI Study Planner
+
+- Gemini AI integration
+- Personalized study plans
+- Course-aware recommendations
+- Uses saved course information
+- Uses public course links as learning references
+- Weekly study scheduling
+- Adjustable study pace
+- Saved study plans
+- Session completion tracking
+- Progress tracking
+- Study recommendations
+
+### Demo Mode
+
+- One-click Live Demo
+- Sample learning profile
+- Restores original data after exiting
+- Ideal for portfolio demonstrations
+
+### User Experience
+
 - Responsive design
-- Keyboard-accessible controls
+- Dark mode
+- Keyboard accessible
+- Form validation
+- Local storage persistence
+- Accessible navigation
+- Empty states
+- Loading states
+- Error handling
+
+---
 
 ## Technologies
 
+### Frontend
+
 - React
 - Vite
-- JavaScript
+- JavaScript (ES6+)
+- React Router DOM
 - CSS
+
+### AI
+
+- Google Gemini API
+
+### Deployment
+
+- Vercel
+
+### Development
+
 - ESLint
 - localStorage
 
-## Run Locally
+---
+
+## Installation
+
+Clone the repository
+
+```bash
+git clone <repository-url>
+```
+
+Install dependencies
 
 ```bash
 npm install
-npm run dev
-
-# AI Learning Dashboard Upgrade
-
-This bundle adds:
-
-- Editable courses
-- Automatic status syncing from progress
-- Functional certifications with add/edit/delete
-- Add/edit/complete/delete goals
-- Delete confirmation modal
-- Clickable dashboard summary cards
-- Improved empty states
-- Mobile hamburger navigation
-- Status-specific colors
-- 404 page
-- localStorage persistence for all data
-
-## Install dependency
-
-Run:
-
-```powershell
-npm install react-router-dom
 ```
 
-## Apply the upgrade
+Start the development server
 
-Copy the contents of this bundle's `src` folder into your project's existing `src` folder and allow matching files to be replaced.
+```bash
+npm run dev
+```
 
-Then run:
+Build for production
 
-```powershell
+```bash
+npm run build
+```
+
+Run ESLint
+
+```bash
 npm run lint
-npm run dev
 ```
 
-## Routes
+---
 
-- `/`
-- `/courses`
-- `/courses/in-progress`
-- `/courses/completed`
-- `/courses/add`
-- `/courses/:courseId/edit`
-- `/certifications`
+## Application Routes
 
-Any unknown route displays the custom 404 page.
+| Route | Description |
+|--------|-------------|
+| / | Dashboard |
+| /courses | All Courses |
+| /courses/add | Add Course |
+| /courses/in-progress | In Progress Courses |
+| /courses/completed | Completed Courses |
+| /courses/:courseId/edit | Edit Course |
+| /goals | Learning Goals |
+| /notes | Notes |
+| /projects | Projects |
+| /certifications | Certifications |
+| /ai-planner | AI Study Planner |
+
+---
+
+## AI Study Planner
+
+The AI Study Planner uses the Google Gemini API to generate personalized study plans based on:
+
+- Selected courses
+- Course progress
+- Learning goals
+- Weekly study hours
+- Learning pace
+- Target completion date
+- Public course source links
+
+Generated plans can be:
+
+- Saved
+- Reopened
+- Updated
+- Marked as completed
+- Tracked through progress indicators
+
+---
+
+## Local Storage
+
+The application stores data locally in the browser, including:
+
+- Courses
+- Goals
+- Notes
+- Projects
+- Certifications
+- Saved study plans
+- User preferences
+- Theme
+- Demo Mode state
+
+---
+
+## Accessibility
+
+The application includes:
+
+- Keyboard navigation
+- Accessible forms
+- Focus indicators
+- Semantic HTML
+- Screen-reader-friendly controls
+- Responsive layouts
+
+---
+
+## Project Structure
+
+```text
+src/
+ ├── components/
+ ├── pages/
+ ├── data/
+ ├── utils/
+ ├── assets/
+ ├── App.jsx
+ └── main.jsx
+```
+
+---
+
+## Future Improvements
+
+- User authentication
+- Cloud synchronization
+- Calendar integration
+- Learning analytics
+- Achievement badges
+- Export study plans
+- PDF reports
+- Email reminders
+- AI learning insights
+- Mobile application
+
+---
+
+## License
+
+This project was created for educational and portfolio purposes.

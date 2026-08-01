@@ -2,47 +2,97 @@
 
 ## Project
 
-AI Learning Dashboard built with React and Vite.
+AI Learning Dashboard built with React, Vite, React Router, and the Google Gemini API.
 
 ## How AI Assisted
 
-AI helped me:
+AI assisted throughout the development process by helping to:
 
-- Plan the application features
-- Structure the React components and state
-- Implement course and goal forms
-- Add search and filtering
-- Add localStorage persistence
-- Add dark mode
-- Create responsive styling
-- Prepare a testing checklist
-- Review possible accessibility issues
+- Plan the overall application architecture
+- Design reusable React components
+- Structure application state and routing
+- Implement course, goal, project, certification, and notes management
+- Build responsive layouts
+- Implement dark mode
+- Create accessible forms and keyboard navigation
+- Add search, filtering, and sorting
+- Implement localStorage persistence
+- Develop the AI Study Planner
+- Integrate the Gemini API
+- Create a site-wide Demo Mode
+- Generate reusable CSS patterns
+- Improve error handling
+- Prepare documentation
+- Review accessibility and usability
+
+---
 
 ## Manual Testing
 
-I manually tested:
+The application was manually tested for:
 
-- Adding and deleting courses
-- Adding and deleting goals
+- Adding, editing, and deleting courses
+- Course progress updates
+- Automatic status calculation
+- Search and filtering
+- Goal management
+- Notes management
+- Project management
+- Certification management
+- AI Study Plan generation
+- Saving and reopening study plans
+- Session completion tracking
+- Demo Mode loading and restoration
 - Form validation
-- Course search
-- Status filtering
+- Error handling
+- Gemini API responses
 - Dark and light themes
-- Data persistence after page refresh
+- localStorage persistence
+- Responsive layouts
 - Keyboard navigation
-- Mobile layout
+- Accessibility
+- Cross-page navigation
+- Production build using Vite
+- ESLint validation
+
+---
 
 ## Manual Improvements and Corrections
 
-After reviewing the AI-generated code, I made or verified the following improvements:
+After reviewing the AI-generated code, the following improvements were made:
 
-- Checked that saved data remained after refresh
-- Checked the mobile layout
-- Reviewed variable names for clarity
-- Ran ESLint and corrected reported issues
+- Refactored components for better readability
+- Improved state management
+- Fixed validation issues
+- Improved responsive layouts
+- Added better loading and error states
+- Improved accessibility
+- Fixed dark mode inconsistencies
+- Improved button consistency
+- Added saved study plans
+- Added study session completion tracking
+- Added Demo Mode with backup and restore
+- Improved Gemini API error handling
+- Improved JSON validation for AI responses
+- Improved localStorage reliability
+- Fixed UI consistency across pages
+- Ran ESLint and resolved reported issues
+- Verified successful production builds before deployment
+
+---
 
 ## Lessons Learned
 
-AI can speed up development, but generated code still needs manual review and testing.
+AI significantly accelerated development by assisting with planning, implementation, debugging, documentation, and UI improvements.
 
-Detailed requirements produce better results than vague instructions. Testing persistence, validation, accessibility, and responsiveness is necessary before accepting AI-generated code.
+However, AI-generated code still required manual review, testing, and refinement to ensure:
+
+- Correct functionality
+- Accessibility compliance
+- Responsive layouts
+- Consistent UI/UX
+- Reliable data persistence
+- Production readiness
+- Maintainable code quality
+
+The project demonstrated that the best results come from combining AI-assisted development with careful manual testing, iterative improvements, and clear technical requirements.
