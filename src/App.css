@@ -4325,3 +4325,7 @@ select[aria-invalid="true"] {
   }
 }
 
+/* Accessibility fix: WCAG 2.1 AA contrast for secondary links in light mode */
+:root:not([data-theme="dark"]) .secondary-link-button {
+  color: #a52d3d;
+}
