@@ -272,7 +272,6 @@ function findCourseByTitle(courses, title) {
 }
 
 function findAllowedSourceUrl({
-  courses,
   course,
   generatedUrl,
 }) {
@@ -351,7 +350,6 @@ function normalizeSessions({
           session?.activities
         ),
         sourceUrl: findAllowedSourceUrl({
-          courses,
           course: matchedCourse,
           generatedUrl: session?.sourceUrl,
         }),

@@ -185,7 +185,7 @@ export default function AIPlannerPage({ courses = [], goals = [] }) {
         (session, index) => {
           const currentSessionId = session.id ?? `session-${index}`;
           return currentSessionId === sessionId
-            ? { ...session, completed: !Boolean(session.completed) }
+            ? { ...session, completed: !(session.completed) }
             : session;
         }
       ),
@@ -623,7 +623,7 @@ export default function AIPlannerPage({ courses = [], goals = [] }) {
                           session.completed ? "completed" : ""
                         }`}
                         onClick={() => toggleSessionCompleted(sessionId)}
-                        aria-pressed={Boolean(session.completed)}
+                        aria-pressed={session.completed}
                       >
                         {session.completed ? "✓" : ""}
                       </button>
