@@ -33,6 +33,146 @@ import {
 
 import "./App.css";
 
+
+const DEMO_ACTIVE_KEY = "ai-dashboard-demo-active";
+const DEMO_BACKUP_KEY = "ai-dashboard-demo-backup";
+
+const DEMO_DATA = {
+  courses: [
+    {
+      id: "demo-course-python",
+      title: "Scientific Computing with Python",
+      platform: "freeCodeCamp",
+      category: "Programming",
+      progress: 60,
+      status: "In Progress",
+      deadline: "2026-09-15",
+      url: "https://www.freecodecamp.org/learn/scientific-computing-with-python/",
+      favorite: true,
+      description:
+        "Build a strong Python foundation through practical scientific-computing projects.",
+      notes: [
+        {
+          id: "demo-note-python-functions",
+          title: "Python functions and modules",
+          content:
+            "Review function parameters, return values, imports, modules, and exception handling before the next practice session.",
+          createdAt: "2026-07-29T09:00:00.000Z",
+          updatedAt: "2026-07-29T09:00:00.000Z",
+        },
+      ],
+      isDemo: true,
+    },
+    {
+      id: "demo-course-generative-ai",
+      title: "Introduction to Generative AI",
+      platform: "Google Cloud Skills Boost",
+      category: "Artificial Intelligence",
+      progress: 35,
+      status: "In Progress",
+      deadline: "2026-09-30",
+      url: "https://www.cloudskillsboost.google/paths/118",
+      favorite: false,
+      description:
+        "Learn core generative-AI concepts, responsible AI principles, and practical applications.",
+      notes: [
+        {
+          id: "demo-note-prompting",
+          title: "Prompt design checklist",
+          content:
+            "Define the role, task, context, constraints, expected format, and evaluation criteria before testing a prompt.",
+          createdAt: "2026-07-30T09:00:00.000Z",
+          updatedAt: "2026-07-30T09:00:00.000Z",
+        },
+      ],
+      isDemo: true,
+    },
+    {
+      id: "demo-course-accessibility",
+      title: "Accessible React Components",
+      platform: "Independent Study",
+      category: "Frontend Development",
+      progress: 100,
+      status: "Completed",
+      deadline: "2026-08-20",
+      url: "https://react.dev/learn",
+      favorite: true,
+      description:
+        "Practice semantic HTML, keyboard navigation, focus management, and accessible React patterns.",
+      notes: [],
+      isDemo: true,
+    },
+  ],
+  goals: [
+    {
+      id: "demo-goal-ai-course",
+      title: "Complete one AI course",
+      deadline: "2026-09-30",
+      completed: false,
+      isDemo: true,
+    },
+    {
+      id: "demo-goal-project",
+      title: "Ship an AI-enhanced portfolio project",
+      deadline: "2026-10-15",
+      completed: false,
+      isDemo: true,
+    },
+    {
+      id: "demo-goal-accessibility",
+      title: "Complete an accessibility review",
+      deadline: "2026-08-20",
+      completed: true,
+      isDemo: true,
+    },
+  ],
+  certifications: [
+    {
+      id: "demo-cert-responsive-web-design",
+      title: "Responsive Web Design",
+      issuer: "freeCodeCamp",
+      dateEarned: "2026-07-20",
+      credentialUrl: "https://www.freecodecamp.org/",
+      description:
+        "Portfolio demonstration credential for responsive layouts, semantic HTML, and accessibility fundamentals.",
+      isDemo: true,
+    },
+    {
+      id: "demo-cert-ai-fundamentals",
+      title: "AI Fundamentals",
+      issuer: "IBM SkillsBuild",
+      dateEarned: "2026-07-28",
+      credentialUrl: "https://skillsbuild.org/",
+      description:
+        "Portfolio demonstration credential covering foundational AI concepts and responsible use.",
+      isDemo: true,
+    },
+  ],
+  projects: [
+    {
+      id: "demo-project-ai-dashboard",
+      title: "AI Learning Dashboard",
+      description:
+        "A responsive learning tracker with course progress, goals, notes, portfolio projects, certifications, and Gemini-powered study plans.",
+      techStack: ["React", "Vite", "Gemini API", "Vercel"],
+      liveUrl: "",
+      githubUrl: "",
+      isDemo: true,
+    },
+    {
+      id: "demo-project-accessible-components",
+      title: "Accessible Components Playground",
+      description:
+        "A small React application demonstrating keyboard-friendly forms, dialogs, menus, and focus states.",
+      techStack: ["React", "CSS", "Accessibility"],
+      liveUrl: "",
+      githubUrl: "",
+      isDemo: true,
+    },
+  ],
+};
+
+
 function readStorage(key, fallback) {
   try {
     const savedValue =
@@ -88,6 +228,11 @@ function App() {
           "ai-dashboard-theme"
         ) || "light"
     );
+
+  const [isDemoMode, setIsDemoMode] = useState(
+    () => localStorage.getItem(DEMO_ACTIVE_KEY) === "true"
+  );
+
 
   const [
     deleteTarget,
@@ -151,6 +296,83 @@ function App() {
       theme
     );
   }, [theme]);
+
+
+  function enterDemoMode() {
+    if (isDemoMode) {
+      return;
+    }
+
+    const backup = {
+      courses,
+      goals,
+      certifications,
+      projects,
+    };
+
+    localStorage.setItem(
+      DEMO_BACKUP_KEY,
+      JSON.stringify(backup)
+    );
+
+    setCourses(DEMO_DATA.courses);
+    setGoals(DEMO_DATA.goals);
+    setCertifications(DEMO_DATA.certifications);
+    setProjects(DEMO_DATA.projects);
+
+    localStorage.setItem(DEMO_ACTIVE_KEY, "true");
+    setIsDemoMode(true);
+  }
+
+  function exitDemoMode() {
+    try {
+      const storedBackup = localStorage.getItem(
+        DEMO_BACKUP_KEY
+      );
+
+      const backup = storedBackup
+        ? JSON.parse(storedBackup)
+        : null;
+
+      setCourses(
+        Array.isArray(backup?.courses)
+          ? backup.courses
+          : initialCourses
+      );
+
+      setGoals(
+        Array.isArray(backup?.goals)
+          ? backup.goals
+          : initialGoals
+      );
+
+      setCertifications(
+        Array.isArray(backup?.certifications)
+          ? backup.certifications
+          : initialCertifications
+      );
+
+      setProjects(
+        Array.isArray(backup?.projects)
+          ? backup.projects
+          : initialProjects
+      );
+    } catch (error) {
+      console.error(
+        "Unable to restore data after Demo Mode:",
+        error
+      );
+
+      setCourses(initialCourses);
+      setGoals(initialGoals);
+      setCertifications(initialCertifications);
+      setProjects(initialProjects);
+    } finally {
+      localStorage.removeItem(DEMO_BACKUP_KEY);
+      localStorage.removeItem(DEMO_ACTIVE_KEY);
+      setIsDemoMode(false);
+    }
+  }
 
   function addCourse(course) {
     setCourses((current) => [
@@ -398,6 +620,9 @@ function App() {
               : "light"
           )
         }
+        isDemoMode={isDemoMode}
+        onEnterDemo={enterDemoMode}
+        onExitDemo={exitDemoMode}
       />
 
       <Routes>
