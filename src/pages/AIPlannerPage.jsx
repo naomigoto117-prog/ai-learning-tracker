@@ -1,742 +1,511 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+const STUDY_PLAN_STORAGE_KEY = "aiStudyPlan";
+import "./AIPlannerPage.css";
 
-const STORAGE_KEY = "ai-dashboard-study-plans";
-
-function readPlans() {
+function readStorage(key, fallback) {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    return [];
+    const storedValue = localStorage.getItem(key);
+    return storedValue ? JSON.parse(storedValue) : fallback;
+  } catch (error) {
+    console.error(`Unable to read ${key}:`, error);
+    return fallback;
   }
 }
 
-function getDefaultDate() {
-  const date = new Date();
-  date.setDate(date.getDate() + 30);
-  return date.toISOString().slice(0, 10);
-}
-
-function createId() {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
+function saveToStorage(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Unable to save ${key}:`, error);
   }
-
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function distributeHours(totalHours, days) {
-  const base =
-    Math.floor((Number(totalHours) / days.length) * 10) / 10;
-
-  let remaining =
-    Math.round((Number(totalHours) - base * days.length) * 10) / 10;
-
-  return days.map((day) => {
-    const extra = remaining >= 0.1 ? 0.1 : 0;
-
-    remaining = Math.max(
-      0,
-      Math.round((remaining - extra) * 10) / 10
-    );
-
-    return {
-      day,
-      hours: Math.round((base + extra) * 10) / 10,
-    };
-  });
-}
-
-function calculateWeeksAvailable(targetDate) {
-  const today = new Date();
-  const deadline = new Date(`${targetDate}T23:59:59`);
-
-  return Math.max(
-    1,
-    Math.ceil(
-      (deadline - today) /
-        (1000 * 60 * 60 * 24 * 7)
-    )
-  );
-}
-
-/*
- * Local fallback planner.
- * This is used only when the Gemini API is unavailable.
- */
-function buildLocalStudyPlan({
-  courses,
-  goals,
-  hoursPerWeek,
-  targetDate,
-  pace,
-  focus,
-}) {
-  const activeCourses = courses.filter(
-    (course) => course.status !== "Completed"
-  );
-
-  const selectedCourses = focus.length
-    ? activeCourses.filter((course) =>
-        focus.some((topic) =>
-          `${course.title || ""} ${course.category || ""}`
-            .toLowerCase()
-            .includes(topic.toLowerCase())
-        )
-      )
-    : activeCourses;
-
-  const planCourses = selectedCourses.length
-    ? selectedCourses
-    : activeCourses.length
-      ? activeCourses
-      : courses;
-
-  const daysByPace = {
-    Relaxed: ["Monday", "Wednesday", "Saturday"],
-    Balanced: ["Monday", "Tuesday", "Thursday", "Saturday"],
-    Intensive: [
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ],
-  };
-
-  const days = daysByPace[pace] || daysByPace.Balanced;
-
-  const scheduleHours = distributeHours(
-    Number(hoursPerWeek),
-    days
-  );
-
-  const sessions = scheduleHours.map((entry, index) => {
-    const course =
-      planCourses[index % Math.max(planCourses.length, 1)];
-
-    const courseTitle =
-      course?.title || "Core learning session";
-
-    const remaining = course
-      ? Math.max(0, 100 - Number(course.progress || 0))
-      : 100;
-
-    let task =
-      "Study the next core lesson and take structured notes.";
-
-    if (remaining <= 20) {
-      task =
-        "Finish the remaining lessons and complete a review or practical project.";
-    } else if (remaining <= 60) {
-      task =
-        "Complete the next module and practice the key concepts.";
-    }
-
-    return {
-      ...entry,
-      title: courseTitle,
-      task,
-    };
-  });
-
-  const openGoals = goals.filter((goal) => !goal.completed);
-
-  return {
-    id: createId(),
-    createdAt: new Date().toISOString(),
-    generatedBy: "local",
-    title: `${pace} Study Plan`,
-    targetDate,
-    hoursPerWeek: Number(hoursPerWeek),
-    pace,
-    focus,
-    weeksAvailable: calculateWeeksAvailable(targetDate),
-    courseCount: planCourses.length,
-    sessions,
-    recommendations: [
-      `Use ${Math.max(
-        1,
-        Math.round(Number(hoursPerWeek) * 0.15)
-      )} hour(s) each week for review and recall practice.`,
-      openGoals.length
-        ? `Prioritize your active goal: ${openGoals[0].title}.`
-        : "Create one measurable weekly goal to keep the plan focused.",
-      "Update course progress after every study session so future plans remain accurate.",
-    ],
-  };
-}
-
-function isValidPlan(plan) {
+function getCourseUrl(course) {
   return (
-    plan &&
-    typeof plan === "object" &&
-    typeof plan.title === "string" &&
-    Array.isArray(plan.sessions) &&
-    plan.sessions.length > 0 &&
-    Array.isArray(plan.recommendations)
+    course?.url ||
+    course?.sourceUrl ||
+    course?.courseUrl ||
+    course?.link ||
+    ""
   );
 }
 
-function planToText(plan) {
-  const source =
-    plan.generatedBy === "gemini"
-      ? "Generated with Gemini AI"
-      : "Generated with the local fallback planner";
-
-  const lines = [
-    plan.title,
-    source,
-    `Target date: ${plan.targetDate}`,
-    `Study time: ${plan.hoursPerWeek} hours/week`,
-    `Pace: ${plan.pace}`,
-    "",
-    "Weekly schedule",
-    ...plan.sessions.flatMap((session) => [
-      `${session.day}: ${session.title} (${session.hours} hours)`,
-      `- ${session.task}`,
-    ]),
-    "",
-    "Recommendations",
-    ...plan.recommendations.map((item) => `- ${item}`),
-  ];
-
-  return lines.join("\n");
+function isCourseCompleted(course) {
+  return (
+    String(course?.status || "").toLowerCase() === "completed" ||
+    Number(course?.progress || 0) >= 100
+  );
 }
 
-export default function AIPlannerPage({
-  courses = [],
-  goals = [],
-}) {
-  const topics = useMemo(() => {
-    const values = courses.flatMap((course) => [
-      course.category,
-      course.title,
-    ]);
+function getTodayDate() {
+  return new Date().toISOString().split("T")[0];
+}
 
-    return [...new Set(values.filter(Boolean))].slice(0, 10);
+function formatDate(dateValue) {
+  if (!dateValue) return "";
+
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(`${dateValue}T00:00:00`));
+}
+
+export default function AIPlannerPage({ courses = [], goals = [] }) {
+  const [selectedCourseIds, setSelectedCourseIds] = useState([]);
+  const [hoursPerWeek, setHoursPerWeek] = useState(8);
+  const [targetDate, setTargetDate] = useState("");
+  const [pace, setPace] = useState("Balanced");
+  const [plan, setPlan] = useState(null);
+  const [expandedSessionId, setExpandedSessionId] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    const savedPlan = readStorage(STUDY_PLAN_STORAGE_KEY, null);
+
+    if (savedPlan && typeof savedPlan === "object") {
+      setPlan(savedPlan);
+      setExpandedSessionId(savedPlan.sessions?.[0]?.id || null);
+    }
+  }, []);
+
+  const activeCourses = useMemo(() => {
+    const courseList = Array.isArray(courses) ? courses : [];
+    return courseList.filter((course) => !isCourseCompleted(course));
   }, [courses]);
 
-  const [form, setForm] = useState({
-    hoursPerWeek: 10,
-    targetDate: getDefaultDate(),
-    pace: "Balanced",
-    focus: [],
-  });
+  const selectedCourses = useMemo(() => {
+    if (selectedCourseIds.length === 0) return activeCourses;
 
-  const [plan, setPlan] = useState(null);
-  const [savedPlans, setSavedPlans] = useState(readPlans);
-  const [message, setMessage] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+    return activeCourses.filter((course) =>
+      selectedCourseIds.includes(String(course.id))
+    );
+  }, [activeCourses, selectedCourseIds]);
 
-  function updateField(event) {
-    const { name, value } = event.target;
+  const selectedCoursesWithLinks = useMemo(
+    () => selectedCourses.filter((course) => Boolean(getCourseUrl(course))),
+    [selectedCourses]
+  );
 
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+  function toggleCourse(courseId) {
+    const normalizedId = String(courseId);
 
-    setMessage("");
+    setSelectedCourseIds((currentIds) =>
+      currentIds.includes(normalizedId)
+        ? currentIds.filter((id) => id !== normalizedId)
+        : [...currentIds, normalizedId]
+    );
   }
 
-  function toggleFocus(topic) {
-    setForm((current) => ({
-      ...current,
-      focus: current.focus.includes(topic)
-        ? current.focus.filter((item) => item !== topic)
-        : [...current.focus, topic],
-    }));
-
-    setMessage("");
+  function selectAllCourses() {
+    setSelectedCourseIds(activeCourses.map((course) => String(course.id)));
   }
 
-  async function generatePlan(event) {
+  function useAllCoursesAutomatically() {
+    setSelectedCourseIds([]);
+  }
+
+  function toggleSession(sessionId) {
+    setExpandedSessionId((currentId) =>
+      currentId === sessionId ? null : sessionId
+    );
+  }
+
+  async function handleGeneratePlan(event) {
     event.preventDefault();
+    setError("");
+    setNotice("");
+
+    if (activeCourses.length === 0) {
+      setError("Add at least one active course before generating a plan.");
+      return;
+    }
+
+    if (!targetDate) {
+      setError("Choose a target completion date.");
+      return;
+    }
+
+    const numericHours = Number(hoursPerWeek);
+
+    if (!Number.isFinite(numericHours) || numericHours < 2 || numericHours > 60) {
+      setError("Study hours must be between 2 and 60 hours per week.");
+      return;
+    }
 
     setIsGenerating(true);
-    setMessage("Gemini is creating your study plan...");
-
-    const requestData = {
-      hoursPerWeek: Number(form.hoursPerWeek),
-      targetDate: form.targetDate,
-      pace: form.pace,
-      focus: form.focus,
-      courses,
-      goals,
-    };
 
     try {
-      const response = await fetch(
-        "/api/generate-study-plan",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestData),
-        }
-      );
+      const response = await fetch("/api/generate-study-plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courses: selectedCourses,
+          goals: Array.isArray(goals) ? goals : [],
+          hoursPerWeek: numericHours,
+          targetDate,
+          pace,
+        }),
+      });
 
-      const responseData = await response.json().catch(() => ({}));
+      let data;
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error("The server returned an unreadable response.");
+      }
 
       if (!response.ok) {
-        throw new Error(
-          responseData.error ||
-            `The AI request failed with status ${response.status}.`
-        );
+        throw new Error(data?.error || "The AI study plan could not be generated.");
       }
 
-      if (!isValidPlan(responseData.plan)) {
-        throw new Error(
-          "Gemini returned an invalid study-plan format."
-        );
+      if (!data?.plan) {
+        throw new Error("The server did not return a study plan.");
       }
 
-      setPlan({
-        ...responseData.plan,
-        generatedBy: "gemini",
-      });
+      setPlan(data.plan);
+      setExpandedSessionId(data.plan.sessions?.[0]?.id || null);
+      saveToStorage(STUDY_PLAN_STORAGE_KEY, data.plan);
 
-      setMessage(
-        "Your Gemini AI personalized study plan is ready."
+      setNotice(
+        data.plan.usedUrlContext
+          ? "Gemini analyzed the available public course pages."
+          : "The plan was created from your saved course information. Add public course links for lesson-specific planning."
       );
-    } catch (error) {
-      console.error(
-        "Gemini plan generation failed. Using local fallback:",
-        error
-      );
-
-      const fallbackPlan = buildLocalStudyPlan({
-        ...form,
-        courses,
-        goals,
-      });
-
-      setPlan(fallbackPlan);
-
-      setMessage(
-        "Gemini was unavailable, so a local personalized plan was created instead."
-      );
+    } catch (requestError) {
+      console.error("Study-plan request failed:", requestError);
+      setError(requestError?.message || "The study plan could not be generated.");
     } finally {
       setIsGenerating(false);
     }
   }
 
-  function savePlan() {
-    if (!plan) return;
-
-    const nextPlans = [
-      plan,
-      ...savedPlans.filter((item) => item.id !== plan.id),
-    ];
-
-    setSavedPlans(nextPlans);
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(nextPlans)
-    );
-
-    setMessage("Plan saved to this browser.");
-  }
-
-  async function copyPlan() {
-    if (!plan) return;
-
-    try {
-      await navigator.clipboard.writeText(planToText(plan));
-
-      setMessage("Plan copied to your clipboard.");
-    } catch {
-      setMessage(
-        "Copy was blocked by the browser. Use Download instead."
-      );
-    }
-  }
-
-  function downloadPlan() {
-    if (!plan) return;
-
-    const blob = new Blob([planToText(plan)], {
-      type: "text/plain;charset=utf-8",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-
-    anchor.href = url;
-    anchor.download = `study-plan-${plan.targetDate}.txt`;
-
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-
-    URL.revokeObjectURL(url);
-
-    setMessage("Plan downloaded.");
-  }
-
-  function deleteSavedPlan(id) {
-    const nextPlans = savedPlans.filter(
-      (item) => item.id !== id
-    );
-
-    setSavedPlans(nextPlans);
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(nextPlans)
-    );
-
-    if (plan?.id === id) {
-      setPlan(null);
-    }
-
-    setMessage("Saved plan deleted.");
+  function clearPlan() {
+    setPlan(null);
+    setExpandedSessionId(null);
+    setError("");
+    setNotice("");
+    localStorage.removeItem(STUDY_PLAN_STORAGE_KEY);
   }
 
   return (
     <main className="page-content ai-planner-page">
-      <section className="page-heading">
+      <section className="planner-hero">
         <div>
-          <p className="section-label">Smart planning</p>
+          <span className="planner-eyebrow">Gemini learning assistant</span>
           <h1>AI Study Planner</h1>
-
           <p>
-            Create a personalized weekly plan from your
-            courses, goals, availability, and target date.
+            Generate a personalized schedule using the courses already saved in
+            your dashboard. Gemini can inspect public course pages and recommend
+            lessons, practice tasks, projects, and review sessions.
           </p>
         </div>
 
-        <div
-          className="ai-planner-badge"
-          aria-label="Gemini AI study planning"
-        >
-          <span aria-hidden="true">✦</span>
-          Gemini AI planner
-        </div>
+        <span className="planner-model-badge">✦ Powered by Gemini</span>
       </section>
 
-      <section className="ai-planner-layout">
-        <form
-          className="ai-planner-form panel-card"
-          onSubmit={generatePlan}
-        >
-          <div>
-            <p className="section-label">Preferences</p>
-            <h2>Build your schedule</h2>
+      <div className="planner-layout">
+        <form className="planner-form-card" onSubmit={handleGeneratePlan}>
+          <div className="planner-section-heading">
+            <div>
+              <span className="section-number">1</span>
+              <div>
+                <h2>Focus courses</h2>
+                <p>Select specific courses or use all active courses.</p>
+              </div>
+            </div>
+
+            {activeCourses.length > 0 && (
+              <div className="course-selection-actions">
+                <button type="button" className="flat-button" onClick={selectAllCourses}>
+                  Select all
+                </button>
+          
+              </div>
+            )}
           </div>
 
-          <label>
-            Study hours per week
-
-            <input
-              type="number"
-              name="hoursPerWeek"
-              min="2"
-              max="60"
-              value={form.hoursPerWeek}
-              onChange={updateField}
-              disabled={isGenerating}
-              required
-            />
-          </label>
-
-          <label>
-            Target completion date
-
-            <input
-              type="date"
-              name="targetDate"
-              min={new Date().toISOString().slice(0, 10)}
-              value={form.targetDate}
-              onChange={updateField}
-              disabled={isGenerating}
-              required
-            />
-          </label>
-
-          <fieldset
-            className="planner-fieldset"
-            disabled={isGenerating}
-          >
-            <legend>Learning pace</legend>
-
-            <div className="pace-options">
-              {["Relaxed", "Balanced", "Intensive"].map(
-                (pace) => (
-                  <label
-                    key={pace}
-                    className="pace-option"
-                  >
-                    <input
-                      type="radio"
-                      name="pace"
-                      value={pace}
-                      checked={form.pace === pace}
-                      onChange={updateField}
-                    />
-
-                    <span>{pace}</span>
-                  </label>
-                )
-              )}
+          {activeCourses.length === 0 ? (
+            <div className="planner-empty-state">
+              <h3>No active courses</h3>
+              <p>Add a course before generating an AI study plan.</p>
             </div>
-          </fieldset>
+          ) : (
+            <div className="focus-course-grid">
+              {activeCourses.map((course) => {
+                const courseId = String(course.id);
+                const isSelected = selectedCourseIds.includes(courseId);
+                const courseUrl = getCourseUrl(course);
 
-          <fieldset
-            className="planner-fieldset"
-            disabled={isGenerating}
-          >
-            <legend>Focus topics</legend>
-
-            <p className="helper-text">
-              Select topics or leave all unchecked to include
-              every active course.
-            </p>
-
-            <div className="focus-options">
-              {topics.length ? (
-                topics.map((topic) => (
+                return (
                   <label
-                    key={topic}
-                    className="focus-chip"
+                    key={courseId}
+                    className={`focus-course-card ${isSelected ? "selected" : ""}`}
                   >
                     <input
                       type="checkbox"
-                      checked={form.focus.includes(topic)}
-                      onChange={() => toggleFocus(topic)}
+                      checked={isSelected}
+                      onChange={() => toggleCourse(courseId)}
                     />
-
-                    <span>{topic}</span>
+                    <span className="custom-checkbox">{isSelected ? "✓" : ""}</span>
+                    <span className="focus-course-content">
+                      <strong>{course.title || "Untitled course"}</strong>
+                      <span className="focus-course-meta">
+                        {course.platform || "Unknown platform"} · {Number(course.progress || 0)}% complete
+                      </span>
+                      <span className={`source-status ${courseUrl ? "available" : "missing"}`}>
+                        {courseUrl ? "Public source available" : "No source link"}
+                      </span>
+                    </span>
                   </label>
-                ))
-              ) : (
-                <p className="helper-text">
-                  Add a course to create topic-based plans.
-                </p>
-              )}
+                );
+              })}
             </div>
-          </fieldset>
+          )}
+
+          <p className="planner-field-help">
+            Leave every course unchecked to include all active courses automatically.
+          </p>
+
+          <div className="planner-divider" />
+
+          <div className="planner-section-heading">
+            <div>
+              <span className="section-number">2</span>
+              <div>
+                <h2>Study preferences</h2>
+                <p>Set your weekly availability, target date, and learning pace.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="planner-form-grid">
+            <label className="planner-field">
+              <span>Hours per week</span>
+              <input
+                type="number"
+                min="2"
+                max="60"
+                value={hoursPerWeek}
+                onChange={(event) => setHoursPerWeek(event.target.value)}
+                required
+              />
+            </label>
+
+            <label className="planner-field">
+              <span>Target date</span>
+              <input
+                type="date"
+                min={getTodayDate()}
+                value={targetDate}
+                onChange={(event) => setTargetDate(event.target.value)}
+                required
+              />
+            </label>
+
+            <label className="planner-field planner-field-full">
+              <span>Learning pace</span>
+              <select value={pace} onChange={(event) => setPace(event.target.value)}>
+                <option value="Relaxed">Relaxed — 3 study sessions</option>
+                <option value="Balanced">Balanced — 4 study sessions</option>
+                <option value="Intensive">Intensive — 6 study sessions</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="planner-summary">
+            <span>Courses: <strong>{selectedCourses.length}</strong></span>
+            <span>Public sources: <strong>{selectedCoursesWithLinks.length}</strong></span>
+          </div>
+
+          {error && (
+            <div className="planner-message error-message">
+              <strong>Unable to generate plan</strong>
+              <span>{error}</span>
+            </div>
+          )}
+
+          {notice && <div className="planner-message success-message">{notice}</div>}
 
           <button
             type="submit"
-            className="primary-button planner-generate-button"
-            disabled={isGenerating}
+            className="generate-plan-button"
+            disabled={isGenerating || activeCourses.length === 0}
           >
             {isGenerating
-              ? "✦ Gemini is generating..."
-              : "✦ Generate AI Study Plan"}
+              ? "Gemini is analyzing your courses..."
+              : plan
+                ? "Regenerate Study Plan"
+                : "Generate Study Plan"}
           </button>
+
+          {isGenerating && (
+            <div className="generation-progress">
+              <span>Reviewing course progress</span>
+              <span>Reading public course pages</span>
+              <span>Identifying lessons and projects</span>
+              <span>Balancing your weekly schedule</span>
+            </div>
+          )}
         </form>
 
-        <section
-          className="ai-plan-output panel-card"
-          aria-live="polite"
-          aria-busy={isGenerating}
-        >
+        <section className="study-plan-panel">
           {!plan ? (
-            <div className="planner-empty-state">
-              <span aria-hidden="true">✦</span>
-
-              <h2>
-                {isGenerating
-                  ? "Generating your plan"
-                  : "Your plan will appear here"}
-              </h2>
-
+            <div className="planner-placeholder">
+              <span className="placeholder-icon">✦</span>
+              <h2>Your personalized plan will appear here</h2>
               <p>
-                {isGenerating
-                  ? "Gemini is reviewing your courses, goals, and preferences."
-                  : "Choose your availability and learning pace, then generate a personalized weekly schedule."}
+                Choose your courses and study preferences, then generate a
+                source-based schedule.
               </p>
             </div>
           ) : (
-            <>
-              <div className="ai-plan-heading">
+            <div className="generated-plan">
+              <header className="generated-plan-header">
                 <div>
-                  <p className="section-label">
-                    Generated plan
-                  </p>
-
-                  <h2>{plan.title}</h2>
-
+                  <span className="ai-generated-badge">AI generated</span>
+                  <h2>{plan.title || "Personalized Study Plan"}</h2>
                   <p>
-                    Designed for {plan.weeksAvailable} week
-                    {plan.weeksAvailable === 1 ? "" : "s"}{" "}
-                    until {plan.targetDate}.
+                    {plan.hoursPerWeek ?? hoursPerWeek} hours weekly · {plan.pace || pace} pace
+                    {plan.weeksAvailable ? ` · ${plan.weeksAvailable} ${plan.weeksAvailable === 1 ? "week" : "weeks"}` : ""}
                   </p>
+                  {plan.targetDate && <small>Target: {formatDate(plan.targetDate)}</small>}
                 </div>
 
-                <span className="status status-in-progress">
-                  {plan.generatedBy === "gemini"
-                    ? "AI Generated"
-                    : "Local Plan"}
-                </span>
-              </div>
-
-              <div className="planner-stat-grid">
-                <div>
-                  <strong>{plan.hoursPerWeek}</strong>
-                  <span>Hours/week</span>
-                </div>
-
-                <div>
-                  <strong>{plan.courseCount}</strong>
-                  <span>Courses included</span>
-                </div>
-
-                <div>
-                  <strong>{plan.weeksAvailable}</strong>
-                  <span>Weeks available</span>
-                </div>
-              </div>
-
-              <div className="weekly-plan-list">
-                {plan.sessions.map((session, index) => (
-                  <article
-                    key={`${session.day}-${index}`}
-                    className="weekly-plan-card"
-                  >
-                    <div className="weekly-plan-day">
-                      <strong>{session.day}</strong>
-
-                      <span>
-                        {session.hours} hr
-                        {Number(session.hours) === 1
-                          ? ""
-                          : "s"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <h3>{session.title}</h3>
-                      <p>{session.task}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-
-              <div className="planner-recommendations">
-                <h3>Recommendations</h3>
-
-                <ul>
-                  {plan.recommendations.map(
-                    (recommendation, index) => (
-                      <li
-                        key={`${recommendation}-${index}`}
-                      >
-                        {recommendation}
-                      </li>
-                    )
-                  )}
-                </ul>
-              </div>
-
-              <div className="form-actions planner-actions">
-                <button
-                  type="button"
-                  className="primary-button"
-                  onClick={savePlan}
-                >
-                  Save Plan
+                <button type="button" className="clear-plan-button" onClick={clearPlan}>
+                  Clear plan
                 </button>
+              </header>
 
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={copyPlan}
-                >
-                  Copy
-                </button>
+              {Array.isArray(plan.aiInsights) && plan.aiInsights.length > 0 && (
+                <section className="recommendations-card">
+                  <h3>AI insights</h3>
+                  <ul>
+                    {plan.aiInsights.map((insight, index) => <li key={index}>{insight}</li>)}
+                  </ul>
+                </section>
+              )}
 
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={downloadPlan}
-                >
-                  Download
-                </button>
+              {Array.isArray(plan.sourceCourses) && plan.sourceCourses.length > 0 && (
+                <section className="plan-source-summary">
+                  <h3>Courses included</h3>
+                  <div className="source-course-list">
+                    {plan.sourceCourses.map((course, index) => (
+                      <div key={course.id ?? index} className="source-course-item">
+                        <span>{course.title || "Untitled course"}</span>
+                        {course.sourceUrl ? (
+                          <a href={course.sourceUrl} target="_blank" rel="noopener noreferrer">
+                            Open course ↗
+                          </a>
+                        ) : (
+                          <small>Priority: {course.priorityScore ?? "N/A"}</small>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <div className="session-list">
+                {(Array.isArray(plan.sessions) ? plan.sessions : []).map((session, index) => {
+                  const sessionId = session.id ?? `session-${index}`;
+                  const isExpanded = expandedSessionId === sessionId;
+
+                  return (
+                    <article key={sessionId} className="study-session-card">
+                      <span className="session-number">{index + 1}</span>
+
+                      <div className="session-content">
+                        <button
+                          type="button"
+                          className="session-toggle"
+                          onClick={() => toggleSession(sessionId)}
+                          aria-expanded={isExpanded}
+                        >
+                          <span className="session-top-row">
+                            <span>
+                              <span className="session-day">{session.day || `Session ${index + 1}`}</span>
+                              <h3>{session.title || "Study session"}</h3>
+                            </span>
+                            <span className="session-duration">
+                              {session.hours ?? 1} {Number(session.hours ?? 1) === 1 ? "hour" : "hours"} · {isExpanded ? "Hide" : "View"}
+                            </span>
+                          </span>
+                        </button>
+
+                        <p className="session-course">{session.courseTitle || "General study"}</p>
+                        <p className="session-module">
+                          {session.moduleTitle || "Continue the next available lesson"}
+                        </p>
+
+                        {isExpanded && (
+                          <div className="session-expanded-content">
+                            <p className="session-task">{session.task || "Complete the assigned lesson and review your notes."}</p>
+
+                            {Array.isArray(session.activities) && session.activities.length > 0 && (
+                              <ul className="session-activities">
+                                {session.activities.map((activity, activityIndex) => (
+                                  <li key={activityIndex}>{activity}</li>
+                                ))}
+                              </ul>
+                            )}
+
+                            {session.practiceProject && (
+                              <div className="session-extra-box">
+                                <strong>Practice project</strong>
+                                <p>{session.practiceProject}</p>
+                              </div>
+                            )}
+
+                            {session.quizPrompt && (
+                              <div className="session-extra-box">
+                                <strong>Knowledge check</strong>
+                                <p>{session.quizPrompt}</p>
+                              </div>
+                            )}
+
+                            {session.reason && (
+                              <div className="session-extra-box">
+                                <strong>Why Gemini selected this</strong>
+                                <p>{session.reason}</p>
+                              </div>
+                            )}
+
+                            {session.sourceUrl && (
+                              <a
+                                className="lesson-source-link"
+                                href={session.sourceUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Open lesson source ↗
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
-            </>
-          )}
 
-          {message && (
-            <p
-              className="planner-message"
-              role="status"
-            >
-              {message}
-            </p>
+              {Array.isArray(plan.recommendations) && plan.recommendations.length > 0 && (
+                <section className="recommendations-card">
+                  <h3>Gemini recommendations</h3>
+                  <ul>
+                    {plan.recommendations.map((recommendation, index) => (
+                      <li key={index}>{recommendation}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </div>
           )}
         </section>
-      </section>
-
-      <section className="saved-plans-panel panel-card">
-        <div className="section-title-row">
-          <div>
-            <p className="section-label">Plan history</p>
-            <h2>Saved plans</h2>
-          </div>
-
-          <span className="panel-count">
-            {savedPlans.length}
-          </span>
-        </div>
-
-        {savedPlans.length ? (
-          <div className="saved-plan-list">
-            {savedPlans.map((savedPlan) => (
-              <article
-                key={savedPlan.id}
-                className="saved-plan-card"
-              >
-                <button
-                  type="button"
-                  className="saved-plan-open"
-                  onClick={() => {
-                    setPlan(savedPlan);
-                    setMessage("Saved plan opened.");
-                  }}
-                >
-                  <span>
-                    <strong>{savedPlan.title}</strong>
-
-                    <small>
-                      {savedPlan.hoursPerWeek} hours/week ·
-                      Target {savedPlan.targetDate}
-                    </small>
-                  </span>
-
-                  <span aria-hidden="true">Open →</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="danger-button compact-button"
-                  onClick={() =>
-                    deleteSavedPlan(savedPlan.id)
-                  }
-                  aria-label={`Delete ${savedPlan.title}`}
-                >
-                  Delete
-                </button>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div className="compact-empty-state">
-            <span aria-hidden="true">☆</span>
-            <h3>No saved plans yet</h3>
-
-            <p>
-              Generate and save a plan to keep it available
-              in this browser.
-            </p>
-          </div>
-        )}
-      </section>
+      </div>
     </main>
   );
 }
