@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 const STUDY_PLAN_STORAGE_KEY = "aiStudyPlan";
+const SAVED_PLANS_STORAGE_KEY = "aiStudyPlans";
+
 import "./AIPlannerPage.css";
 
 function readStorage(key, fallback) {
@@ -61,14 +63,19 @@ export default function AIPlannerPage({ courses = [], goals = [] }) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [savedPlans, setSavedPlans] = useState([]);
+  const [isSavedPlansOpen, setIsSavedPlansOpen] = useState(false);
 
   useEffect(() => {
     const savedPlan = readStorage(STUDY_PLAN_STORAGE_KEY, null);
+    const storedPlans = readStorage(SAVED_PLANS_STORAGE_KEY, []);
 
     if (savedPlan && typeof savedPlan === "object") {
       setPlan(savedPlan);
       setExpandedSessionId(savedPlan.sessions?.[0]?.id || null);
     }
+
+    setSavedPlans(Array.isArray(storedPlans) ? storedPlans : []);
   }, []);
 
   const activeCourses = useMemo(() => {
@@ -103,14 +110,88 @@ export default function AIPlannerPage({ courses = [], goals = [] }) {
     setSelectedCourseIds(activeCourses.map((course) => String(course.id)));
   }
 
-  function useAllCoursesAutomatically() {
-    setSelectedCourseIds([]);
-  }
-
   function toggleSession(sessionId) {
     setExpandedSessionId((currentId) =>
       currentId === sessionId ? null : sessionId
     );
+  }
+
+  function persistCurrentPlan(nextPlan) {
+    setPlan(nextPlan);
+    saveToStorage(STUDY_PLAN_STORAGE_KEY, nextPlan);
+
+    setSavedPlans((currentPlans) => {
+      const nextPlans = currentPlans.map((savedPlan) =>
+        savedPlan.id === nextPlan.id ? nextPlan : savedPlan
+      );
+      saveToStorage(SAVED_PLANS_STORAGE_KEY, nextPlans);
+      return nextPlans;
+    });
+  }
+
+  function saveCurrentPlan() {
+    if (!plan) return;
+
+    const planToSave = {
+      ...plan,
+      savedAt: new Date().toISOString(),
+      sessions: Array.isArray(plan.sessions)
+        ? plan.sessions.map((session) => ({
+            ...session,
+            completed: Boolean(session.completed),
+          }))
+        : [],
+    };
+
+    setSavedPlans((currentPlans) => {
+      const exists = currentPlans.some((savedPlan) => savedPlan.id === planToSave.id);
+      const nextPlans = exists
+        ? currentPlans.map((savedPlan) =>
+            savedPlan.id === planToSave.id ? planToSave : savedPlan
+          )
+        : [planToSave, ...currentPlans];
+      saveToStorage(SAVED_PLANS_STORAGE_KEY, nextPlans);
+      return nextPlans;
+    });
+
+    setPlan(planToSave);
+    saveToStorage(STUDY_PLAN_STORAGE_KEY, planToSave);
+    setNotice("Study plan saved. You can open it again from Saved Plans.");
+  }
+
+  function openSavedPlan(savedPlan) {
+    setPlan(savedPlan);
+    setExpandedSessionId(savedPlan.sessions?.[0]?.id || null);
+    saveToStorage(STUDY_PLAN_STORAGE_KEY, savedPlan);
+    setIsSavedPlansOpen(false);
+    setError("");
+    setNotice("Saved study plan opened.");
+  }
+
+  function deleteSavedPlan(planId) {
+    setSavedPlans((currentPlans) => {
+      const nextPlans = currentPlans.filter((savedPlan) => savedPlan.id !== planId);
+      saveToStorage(SAVED_PLANS_STORAGE_KEY, nextPlans);
+      return nextPlans;
+    });
+  }
+
+  function toggleSessionCompleted(sessionId) {
+    if (!plan) return;
+
+    const nextPlan = {
+      ...plan,
+      sessions: (Array.isArray(plan.sessions) ? plan.sessions : []).map(
+        (session, index) => {
+          const currentSessionId = session.id ?? `session-${index}`;
+          return currentSessionId === sessionId
+            ? { ...session, completed: !Boolean(session.completed) }
+            : session;
+        }
+      ),
+    };
+
+    persistCurrentPlan(nextPlan);
   }
 
   async function handleGeneratePlan(event) {
@@ -166,9 +247,16 @@ export default function AIPlannerPage({ courses = [], goals = [] }) {
         throw new Error("The server did not return a study plan.");
       }
 
-      setPlan(data.plan);
-      setExpandedSessionId(data.plan.sessions?.[0]?.id || null);
-      saveToStorage(STUDY_PLAN_STORAGE_KEY, data.plan);
+      const generatedPlan = {
+        ...data.plan,
+        sessions: Array.isArray(data.plan.sessions)
+          ? data.plan.sessions.map((session) => ({ ...session, completed: false }))
+          : [],
+      };
+
+      setPlan(generatedPlan);
+      setExpandedSessionId(generatedPlan.sessions?.[0]?.id || null);
+      saveToStorage(STUDY_PLAN_STORAGE_KEY, generatedPlan);
 
       setNotice(
         data.plan.usedUrlContext
@@ -206,6 +294,76 @@ export default function AIPlannerPage({ courses = [], goals = [] }) {
 
         <span className="planner-model-badge">✦ Powered by Gemini</span>
       </section>
+
+      <section className="saved-plans-toolbar">
+        <div>
+          <p className="section-label">Plan history</p>
+          <h2>Saved Plans</h2>
+          <p>Save a generated plan, reopen it later, and keep track of completed sessions.</p>
+        </div>
+
+        <button
+          type="button"
+          className="saved-plans-toggle"
+          onClick={() => setIsSavedPlansOpen((current) => !current)}
+          aria-expanded={isSavedPlansOpen}
+        >
+          Saved Plans
+          <span className="saved-plans-count">{savedPlans.length}</span>
+        </button>
+      </section>
+
+      {isSavedPlansOpen && (
+        <section className="saved-plans-panel">
+          {savedPlans.length === 0 ? (
+            <div className="saved-plans-empty">
+              <h3>No saved plans yet</h3>
+              <p>Generate a study plan and select Save Plan.</p>
+            </div>
+          ) : (
+            <div className="saved-plans-list">
+              {savedPlans.map((savedPlan) => {
+                const completedCount = Array.isArray(savedPlan.sessions)
+                  ? savedPlan.sessions.filter((session) => session.completed).length
+                  : 0;
+                const totalCount = Array.isArray(savedPlan.sessions)
+                  ? savedPlan.sessions.length
+                  : 0;
+
+                return (
+                  <article className="saved-plan-card" key={savedPlan.id}>
+                    <div>
+                      <h3>{savedPlan.title || "Saved Study Plan"}</h3>
+                      <p>
+                        {savedPlan.hoursPerWeek || 0} hours weekly ·{" "}
+                        {savedPlan.pace || "Balanced"} pace
+                      </p>
+                      <span>{completedCount} of {totalCount} sessions completed</span>
+                    </div>
+
+                    <div className="saved-plan-actions">
+                      <button
+                        type="button"
+                        className="saved-plan-open"
+                        onClick={() => openSavedPlan(savedPlan)}
+                      >
+                        Open
+                      </button>
+                      <button
+                        type="button"
+                        className="saved-plan-delete"
+                        onClick={() => deleteSavedPlan(savedPlan.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="planner-layout">
         <form className="planner-form-card" onSubmit={handleGeneratePlan}>
@@ -375,9 +533,23 @@ export default function AIPlannerPage({ courses = [], goals = [] }) {
                   {plan.targetDate && <small>Target: {formatDate(plan.targetDate)}</small>}
                 </div>
 
-                <button type="button" className="clear-plan-button" onClick={clearPlan}>
-                  Clear plan
-                </button>
+                <div className="generated-plan-actions">
+  <button
+    type="button"
+    className="save-plan-button"
+    onClick={saveCurrentPlan}
+  >
+    Save Plan
+  </button>
+
+  <button
+    type="button"
+    className="clear-plan-button"
+    onClick={clearPlan}
+  >
+    Clear plan
+  </button>
+</div>
               </header>
 
               {Array.isArray(plan.aiInsights) && plan.aiInsights.length > 0 && (
@@ -409,13 +581,53 @@ export default function AIPlannerPage({ courses = [], goals = [] }) {
                 </section>
               )}
 
+              <div className="plan-progress-summary">
+                <strong>
+                  {(Array.isArray(plan.sessions) ? plan.sessions : []).filter(
+                    (session) => session.completed
+                  ).length}{" "}
+                  of{" "}
+                  {(Array.isArray(plan.sessions) ? plan.sessions : []).length}{" "}
+                  sessions completed
+                </strong>
+                <div className="plan-progress-track">
+                  <span
+                    style={{
+                      width: `${
+                        Array.isArray(plan.sessions) && plan.sessions.length > 0
+                          ? Math.round(
+                              (plan.sessions.filter((session) => session.completed).length /
+                                plan.sessions.length) *
+                                100
+                            )
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+
               <div className="session-list">
                 {(Array.isArray(plan.sessions) ? plan.sessions : []).map((session, index) => {
                   const sessionId = session.id ?? `session-${index}`;
                   const isExpanded = expandedSessionId === sessionId;
 
                   return (
-                    <article key={sessionId} className="study-session-card">
+                    <article
+                      key={sessionId}
+                      className={`study-session-card ${session.completed ? "completed" : ""}`}
+                    >
+                      <button
+                        type="button"
+                        className={`session-complete-button ${
+                          session.completed ? "completed" : ""
+                        }`}
+                        onClick={() => toggleSessionCompleted(sessionId)}
+                        aria-pressed={Boolean(session.completed)}
+                      >
+                        {session.completed ? "✓" : ""}
+                      </button>
+
                       <span className="session-number">{index + 1}</span>
 
                       <div className="session-content">

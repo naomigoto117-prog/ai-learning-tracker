@@ -1,4 +1,4 @@
-const GEMINI_MODEL = "gemini-3.6-flash";
+const GEMINI_MODEL = "gemini-3.5-flash";
 
 const DAY_NAMES = [
   "Monday",
@@ -552,7 +552,7 @@ export default async function handler(
 
     const timeout = setTimeout(() => {
       controller.abort();
-    }, 45000);
+    }, 90000);
 
     let geminiResponse;
 
@@ -571,7 +571,6 @@ export default async function handler(
         generationConfig: {
           responseMimeType: "application/json",
           maxOutputTokens: 8192,
-          temperature: 0.35,
         },
       };
 

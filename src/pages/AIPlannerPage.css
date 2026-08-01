@@ -793,3 +793,360 @@
   outline: 3px solid rgba(201, 67, 81, 0.18);
   outline-offset: 3px;
 }
+
+/* ==========================
+   Saved Plans
+========================== */
+
+.saved-plans-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+  padding: 22px 26px;
+  border: 1px solid rgba(201, 67, 81, 0.13);
+  border-radius: 22px;
+  background: var(--card-background, #fff);
+  box-shadow: 0 14px 36px rgba(111, 40, 51, 0.06);
+}
+
+.saved-plans-toolbar h2 {
+  margin: 2px 0 4px;
+  color: var(--heading-color, #9f2f3c);
+}
+
+.saved-plans-toolbar p {
+  margin: 0;
+  color: var(--muted-text, #806166);
+}
+
+/* ==========================
+   Buttons
+========================== */
+
+.saved-plans-toggle,
+.saved-plan-open,
+.save-plan-button,
+.clear-plan-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: auto;
+  min-width: 120px;
+  min-height: 44px;
+
+  padding: 10px 18px;
+
+  border-radius: 12px;
+
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+
+  white-space: nowrap;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.saved-plans-toggle,
+.saved-plan-open,
+.save-plan-button {
+  border: none;
+  background: var(--primary-color, #c94351);
+  color: #fff;
+}
+
+.clear-plan-button {
+  border: 1px solid rgba(201, 67, 81, 0.25);
+  background: #fff;
+  color: var(--primary-color, #c94351);
+}
+
+.saved-plans-toggle:hover,
+.saved-plan-open:hover,
+.save-plan-button:hover {
+  background: var(--heading-color, #9f2f3c);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(201, 67, 81, 0.18);
+}
+
+.clear-plan-button:hover {
+  background: rgba(201, 67, 81, 0.08);
+  border-color: var(--primary-color, #c94351);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(201, 67, 81, 0.12);
+}
+
+.saved-plans-count {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  font-size: 0.75rem;
+}
+
+/* ==========================
+   Saved Plans Panel
+========================== */
+
+.saved-plans-panel {
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid rgba(201, 67, 81, 0.13);
+  border-radius: 22px;
+  background: var(--card-background, #fff);
+}
+
+.saved-plans-list {
+  display: grid;
+  gap: 12px;
+}
+
+.saved-plan-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid rgba(201, 67, 81, 0.13);
+  border-radius: 16px;
+  background: var(--soft-background, #fff8f5);
+}
+
+.saved-plan-card h3 {
+  margin: 0;
+  color: var(--heading-color, #9f2f3c);
+}
+
+.saved-plan-card p {
+  margin: 5px 0;
+  color: var(--muted-text, #806166);
+}
+
+.saved-plan-card span {
+  font-size: 0.78rem;
+  color: var(--muted-text, #806166);
+}
+
+.saved-plan-actions,
+.generated-plan-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.saved-plan-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 44px;
+  padding: 10px 18px;
+
+  border: 1px solid rgba(190, 44, 61, 0.22);
+  border-radius: 12px;
+
+  background: transparent;
+  color: #a52739;
+
+  cursor: pointer;
+  font-weight: 700;
+
+  transition: all 0.2s ease;
+}
+
+.saved-plan-delete:hover {
+  background: rgba(190, 44, 61, 0.08);
+}
+
+/* ==========================
+   Empty State
+========================== */
+
+.saved-plans-empty {
+  padding: 28px;
+  text-align: center;
+}
+
+.saved-plans-empty h3 {
+  margin: 0 0 6px;
+  color: var(--heading-color, #9f2f3c);
+}
+
+.saved-plans-empty p {
+  margin: 0;
+  color: var(--muted-text, #806166);
+}
+
+/* ==========================
+   Progress
+========================== */
+
+.plan-progress-summary {
+  display: grid;
+  gap: 9px;
+  padding: 15px;
+  border-radius: 16px;
+  background: var(--soft-background, #fff8f5);
+  color: var(--heading-color, #9f2f3c);
+}
+
+.plan-progress-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(201, 67, 81, 0.12);
+}
+
+.plan-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary-color, #c94351);
+  transition: width 0.22s ease;
+}
+
+/* ==========================
+   Completed Sessions
+========================== */
+
+.study-session-card.completed {
+  background: rgba(43, 142, 92, 0.04);
+  border-color: rgba(43, 142, 92, 0.28);
+}
+
+.study-session-card.completed .session-content {
+  opacity: 0.78;
+}
+
+.session-complete-button {
+  display: grid;
+  place-items: center;
+
+  width: 28px;
+  height: 28px;
+
+  margin-top: 4px;
+
+  border: 2px solid rgba(201, 67, 81, 0.35);
+  border-radius: 8px;
+
+  background: transparent;
+  color: #fff;
+
+  cursor: pointer;
+  font-weight: 900;
+
+  transition: all 0.2s ease;
+}
+
+.session-complete-button.completed {
+  background: #267b52;
+  border-color: #267b52;
+}
+
+/* ==========================
+   Mobile
+========================== */
+
+@media (max-width: 700px) {
+
+  .saved-plans-toolbar,
+  .saved-plan-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .saved-plan-actions,
+  .generated-plan-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .saved-plans-toggle,
+  .saved-plan-open,
+  .save-plan-button,
+  .clear-plan-button,
+  .saved-plan-delete {
+    width: auto;
+    min-width: 120px;
+  }
+
+}
+
+/* ==========================
+   Requested Fix: Keep Save Plan and Clear plan flat and side by side
+   ========================== */
+
+.generated-plan-header {
+  align-items: flex-start;
+}
+
+.generated-plan-actions {
+  display: flex;
+  flex-direction: row !important;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap !important;
+  gap: 12px;
+  width: auto !important;
+}
+
+.generated-plan-actions .save-plan-button,
+.generated-plan-actions .clear-plan-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  width: auto !important;
+  min-width: 120px;
+  min-height: 44px;
+  height: auto;
+
+  margin: 0;
+  padding: 10px 18px;
+
+  border-radius: 12px;
+
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.generated-plan-actions .save-plan-button {
+  border: 1px solid var(--primary-color, #c94351);
+  background: var(--primary-color, #c94351);
+  color: #ffffff;
+}
+
+.generated-plan-actions .clear-plan-button {
+  border: 1px solid rgba(201, 67, 81, 0.25);
+  background: var(--card-background, #ffffff);
+  color: var(--primary-color, #c94351);
+}
+
+@media (max-width: 700px) {
+  .generated-plan-actions {
+    flex-direction: row !important;
+    justify-content: flex-start;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+
+  .generated-plan-actions .save-plan-button,
+  .generated-plan-actions .clear-plan-button {
+    width: auto !important;
+    min-width: 120px;
+  }
+}
